@@ -1,0 +1,41 @@
+# Merges marcinz606/NegPy main into this fork's main and keeps the fork's own commits.
+# A conflict, or an upstream change to a workflow file, stops the merge: the job then opens an issue.
+name: Sync with upstream
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    if: github.repository != 'marcinz606/NegPy'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Merge upstream main
+        run: |
+          set +e
+          out=$(gh api -X POST "repos/$REPO/merge-upstream" -f branch=main 2>&1)
+          status=$?
+          set -e
+          echo "$out"
+          if [ $status -eq 0 ]; then exit 0; fi
+          title="Sync with upstream needs a manual merge"
+          if [ -z "$(gh issue list -R "$REPO" --state open --search "in:title \"$title\"" --json number -q '.[].number')" ]; then
+            gh issue create -R "$REPO" --title "$title" --body "The daily sync could not merge marcinz606/NegPy main into main.
+
+          GitHub answered:
+          \`\`\`
+          $out
+          \`\`\`
+
+          Open the repository page and click Sync fork, or merge upstream main locally and fix the conflicts."
+          fi
+          exit 1
