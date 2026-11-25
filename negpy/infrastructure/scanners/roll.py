@@ -27,6 +27,8 @@ from negpy.infrastructure.scanners.base import ScannerCapabilities
 MEASURED_NUDGE_MM = 55.0
 # The global setting behind the XPAN Mode toggle.
 XPAN_MODE_SETTING = "xpan_mode"
+# The global setting behind Auto Stitch: stitch each pair of scans after an XPAN batch.
+XPAN_AUTO_STITCH_SETTING = "xpan_auto_stitch"
 
 
 def effective_pitch_mm(caps: ScannerCapabilities) -> float:

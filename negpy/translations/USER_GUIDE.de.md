@@ -410,7 +410,7 @@ Korrigiert Farbfehler, die von Lichtquelle, Kamera und Film kommen.
 
 **Farbton-Trimmung** (Kamera mit schmalbandigem Licht): dreht alle Farben auf dem Farbkreis, für ein Licht, das Gelb orange oder Grün oliv färbt. Lass den Wert bei weißem Licht auf 0. Sie wirkt auch bei Dias, wo das Sensor-Farbvermischungsprofil nicht wirkt.
 
-<!-- panel:assembly src:7710cd19 -->
+<!-- panel:assembly src:eeb75aab -->
 ### 10.8 Bildzusammenstellung
 
 Wie aus Dateien Bilder werden. Jede Rolle behält hier ihre eigenen Einstellungen.
@@ -436,7 +436,9 @@ Klicke mit der rechten Maustaste auf eine Hälfte für **Teilung für dieses Bil
 
 #### XPAN
 
-**XPAN-Modus** lässt jedes Bild in der Coolscan-Streifenvorschau bis zu 55 mm in jede Richtung verschieben, für XPAN-Panoramen. Er gilt für alle Rollen.
+**XPAN-Modus** lässt jedes Bild der Coolscan-Streifenvorschau 55 mm in jede Richtung verschieben, auf jeder Rolle.
+
+*   **Auto-Stitch**: stitcht nach einem Streifenscan je zwei aufeinanderfolgende Scans. **XPAN-Paare stitchen** (Rechtsklick) macht das für die Auswahl.
 
 <!-- panel:metadata_gear src:208e1498 -->
 ### Analoge Ausrüstung

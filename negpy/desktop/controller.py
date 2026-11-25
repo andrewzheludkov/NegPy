@@ -255,6 +255,7 @@ from negpy.features.toning.models import ToningConfig
 from negpy.infrastructure.capture.settings import WhiteCaptureMode
 from negpy.infrastructure.display.color_spaces import ColorSpaceRegistry
 from negpy.infrastructure.filesystem.watcher import FolderWatchService
+from negpy.infrastructure.scanners.roll import XPAN_AUTO_STITCH_SETTING, XPAN_MODE_SETTING
 from negpy.infrastructure.gpu.device import GPUDevice
 from negpy.infrastructure.gpu.resources import GPUTexture
 from negpy.infrastructure.storage.local_asset_store import LocalAssetStore
@@ -781,6 +782,12 @@ class AppController(QObject):
         self._pending_asset_discoveries: List[_DiscoveryRequest] = []
         self._active_discovery_keys: frozenset[str] = frozenset()
         self._pending_scanned_file: Optional[str] = None
+        # XPAN pairs still to stitch, None when no pair run is active; see stitch_xpan_pairs.
+        self._xpan_pairs: Optional[List[Tuple[str, str]]] = None
+        self._xpan_stitched = 0
+        self._xpan_skipped = 0
+        self._xpan_waits = 0
+        self._xpan_current = False
         self._scan_as_roll = False
         self._batch_frame_selected = False
         self._gpu_fallback_notified = False
@@ -7426,6 +7433,9 @@ class AppController(QObject):
 
     def _on_scan_batch_finished(self, paths: list) -> None:
         self.scan_batch_finished.emit(paths)
+        repo = self.session.repo
+        if repo.get_global_setting(XPAN_MODE_SETTING, False) and repo.get_global_setting(XPAN_AUTO_STITCH_SETTING, False):
+            self.stitch_xpan_pairs([str(p) for p in paths])
 
     def _discover_scanned(
         self, paths: List[str], selected: str, as_roll: bool, triplet: Optional[dict] = None, select: bool = True
@@ -7475,8 +7485,74 @@ class AppController(QObject):
             )
         )
 
+    # ── XPAN pairs: one XPAN frame is two scans in a row ───────────────
+
+    def request_stitch_xpan_pairs(self) -> None:
+        """Stitch the selected frames two at a time, in file name order."""
+        files = [self.state.uploaded_files[i] for i in sorted(set(self.state.selected_indices)) if 0 <= i < len(self.state.uploaded_files)]
+        paths = sorted({f["path"] for f in files}, key=lambda p: os.path.basename(p).lower())
+        self.stitch_xpan_pairs(paths)
+
+    def stitch_xpan_pairs(self, paths: List[str]) -> None:
+        """Stitch *paths* as pairs (1+2, 3+4, ...). A pair with no overlap stays as two frames."""
+        pairs = [(paths[i], paths[i + 1]) for i in range(0, len(paths) - 1, 2)]
+        if not pairs:
+            self.set_status(tr("Select two or more frames to stitch"), 4000)
+            return
+        self._xpan_pairs = pairs
+        self._xpan_stitched = 0
+        self._xpan_skipped = 0
+        self._xpan_waits = 0
+        self._xpan_current = False
+        self._next_xpan_pair()
+
+    def _xpan_file(self, path: str) -> Optional[dict]:
+        return next((f for f in self.state.uploaded_files if f.get("path") == path), None)
+
+    def _next_xpan_pair(self) -> None:
+        """Start the next pair once the batch lane is free and both scans are loaded."""
+        self._xpan_current = False
+        pairs = self._xpan_pairs
+        if pairs is None:
+            return
+        if not pairs:
+            self._xpan_pairs = None
+            self.set_status(
+                tr("XPAN: stitched {done}, skipped {skipped}", done=self._xpan_stitched, skipped=self._xpan_skipped),
+                6000,
+            )
+            return
+        first, second = pairs[0]
+        files = [self._xpan_file(first), self._xpan_file(second)]
+        # Discovery of the last scans runs as a batch too: wait for it, but not forever.
+        if self._active_batch is not None or None in files:
+            self._xpan_waits += 1
+            if self._xpan_waits <= 120:
+                QTimer.singleShot(1000, self._next_xpan_pair)
+                return
+        pairs.pop(0)
+        self._xpan_waits = 0
+        if None in files or any(f.get("stitch_paths") or f.get("half") for f in files if f):
+            self._xpan_skipped += 1
+            QTimer.singleShot(0, self._next_xpan_pair)
+            return
+        if self._begin_batch("stitch", tr("Stitching frames"), abortable=True) is None:
+            self._xpan_skipped += 1
+            QTimer.singleShot(0, self._next_xpan_pair)
+            return
+        self._xpan_current = True
+        self.stitch_requested.emit(
+            StitchTask(
+                files=tuple(dict(f) for f in files if f),
+                params_by_path={f["path"]: self._batch_params_for(f) for f in files if f},
+            )
+        )
+
     def _on_stitch_registered(self, payload: dict) -> None:
         self._end_batch("stitch")
+        if self._xpan_current:
+            self._xpan_stitched += 1
+            QTimer.singleShot(0, self._next_xpan_pair)
         files = payload["files"]
         part_paths = [f["path"] for f in files]
         triplets = tuple((f.get("green_path") or "", f.get("blue_path") or "") for f in files)
@@ -7505,10 +7581,17 @@ class AppController(QObject):
         self.generate_missing_thumbnails()
 
     def _on_stitch_cancelled(self) -> None:
+        self._xpan_pairs = None
+        self._xpan_current = False
         self._on_batch_cancelled("stitch")
 
     def _on_stitch_error(self, message: str) -> None:
         self._end_batch("stitch")
+        if self._xpan_current:
+            self._xpan_skipped += 1
+            logger.info("XPAN pair not stitched: %s", message)
+            QTimer.singleShot(0, self._next_xpan_pair)
+            return
         self.set_status(message, 6000, kind="error")
 
     def frame_merge_plan(self, indices: Optional[list[int]] = None) -> tuple[list[int], list[str]]:

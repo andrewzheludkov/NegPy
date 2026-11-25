@@ -608,7 +608,7 @@ Corregge gli errori di colore dovuti alla luce, alla fotocamera e alla pellicola
 
 **Rifinitura della tinta** (fotocamera con luce a banda stretta): ruota tutte le tinte, per una luce che rende arancioni i gialli o oliva i verdi. Lascia 0 per la luce bianca. A differenza del profilo del sensore, funziona anche sulle diapositive.
 
-<!-- panel:assembly src:7710cd19 -->
+<!-- panel:assembly src:eeb75aab -->
 ### 10.8 Composizione del fotogramma
 
 Come i file diventano fotogrammi. Ogni rullino conserva qui le proprie impostazioni.
@@ -634,7 +634,9 @@ Fai clic destro su una metà per **Regola la divisione per questo fotogramma…*
 
 #### XPAN
 
-**Modalità XPAN** consente di spostare ogni fotogramma nell'anteprima della striscia Coolscan fino a 55 mm in ogni direzione, per i panorami XPAN. Vale per tutti i rullini.
+**Modalità XPAN** consente di spostare ogni fotogramma dell'anteprima della striscia Coolscan di 55 mm in ogni direzione, su ogni rullino.
+
+*   **Unione automatica**: dopo la scansione di una striscia unisce ogni due scansioni consecutive. **Unisci coppie XPAN** (clic destro) lo fa per la selezione.
 
 ---
 

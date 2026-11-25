@@ -1079,3 +1079,63 @@ def test_registered_panorama_lit_coverage_is_the_masks():
     warped, masks, canvas, decoded = _warped([part0, part1], cfg)
     cover = stitch_logic.lit_coverage(warped, masks, canvas, decoded)
     assert all(c is m for c, m in zip(cover, masks))
+
+
+def _xpan_controller(monkeypatch, files):
+    from negpy.desktop import controller as controller_module
+    from negpy.desktop.controller import AppController
+
+    c = _mock_controller(files, list(range(len(files))))
+    c._active_batch = None
+    c._xpan_pairs = None
+    c._next_xpan_pair = lambda: AppController._next_xpan_pair(c)
+    c._xpan_file = lambda path: AppController._xpan_file(c, path)
+    queued = []
+    monkeypatch.setattr(controller_module.QTimer, "singleShot", lambda _ms, fn: queued.append(fn))
+    return c, queued
+
+
+def _drain(queued):
+    while queued:
+        queued.pop(0)()
+
+
+def _plain(tag):
+    return {"name": tag, "path": f"/{tag}.tif", "hash": f"h_{tag}"}
+
+
+def test_xpan_pairs_stitch_two_scans_in_a_row(monkeypatch):
+    from negpy.desktop.controller import AppController
+
+    c, queued = _xpan_controller(monkeypatch, [_plain(t) for t in "abcde"])
+    AppController.stitch_xpan_pairs(c, [f"/{t}.tif" for t in "abcde"])
+    first = c.stitch_requested.emit.call_args.args[0]
+    assert [f["path"] for f in first.files] == ["/a.tif", "/b.tif"]
+
+    AppController._on_stitch_error(c, "Could not find overlap between the selected frames")
+    _drain(queued)
+    second = c.stitch_requested.emit.call_args.args[0]
+    assert [f["path"] for f in second.files] == ["/c.tif", "/d.tif"]
+
+    payload = {
+        "files": [_plain("c"), _plain("d")],
+        "transforms": ((1.0, 0.0, 0.0, 0.0, 1.0, 0.0), (1.0, 0.0, 40.0, 0.0, 1.0, 0.0)),
+        "canvas": (120, 80),
+        "sizes": ((80, 80), (80, 80)),
+    }
+    AppController._on_stitch_registered(c, payload)
+    _drain(queued)
+    assert c.stitch_requested.emit.call_count == 2  # "e" has no partner
+    assert (c._xpan_stitched, c._xpan_skipped, c._xpan_pairs) == (1, 1, None)
+
+
+def test_xpan_pairs_wait_for_the_scans_to_load(monkeypatch):
+    from negpy.desktop.controller import AppController
+
+    c, queued = _xpan_controller(monkeypatch, [_plain("a")])
+    AppController.stitch_xpan_pairs(c, ["/a.tif", "/b.tif"])
+    assert not c.stitch_requested.emit.called and len(queued) == 1
+
+    c.state.uploaded_files.append(_plain("b"))
+    _drain(queued)
+    assert [f["path"] for f in c.stitch_requested.emit.call_args.args[0].files] == ["/a.tif", "/b.tif"]

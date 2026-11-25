@@ -410,7 +410,7 @@ Korrigerer fargefeil som kommer fra lyset, kameraet og filmen din.
 
 **Justering av fargetone** (kamera med smalbåndslys): dreier alle fargetoner, for et lys som gjør gult oransje eller grønt olivenfarget. Behold 0 for hvitt lys. I motsetning til sensorprofilen virker den også på dias.
 
-<!-- panel:assembly src:7710cd19 -->
+<!-- panel:assembly src:eeb75aab -->
 ### 10.8 Bildesammensetning
 
 Hvordan filer blir til bilder. Hver rull beholder sine egne innstillinger her.
@@ -436,7 +436,9 @@ Høyreklikk en halvdel for **Juster delingen for dette bildet…** og **Tilbakes
 
 #### XPAN
 
-**XPAN-modus** lar hvert bilde i Coolscan-stripeforhåndsvisningen flyttes opptil 55 mm i hver retning, for XPAN-panoramaer. Den gjelder alle ruller.
+**XPAN-modus** lar hvert bilde i Coolscan-stripeforhåndsvisningen flyttes 55 mm i hver retning, på hver rull.
+
+*   **Automatisk sammensying**: syr sammen hver to påfølgende skanninger etter en stripeskanning. **Sy sammen XPAN-par** (høyreklikk) gjør det for utvalget.
 
 <!-- panel:metadata_gear src:208e1498 -->
 ### Analogt utstyr

@@ -635,7 +635,9 @@ Right-click a half for **Adjust Split for This Frame…** and **Reset Split to R
 
 #### XPAN
 
-**XPAN Mode** lets each frame in the Coolscan strip preview move up to 55 mm each way, for XPAN panoramas. It applies to all rolls.
+**XPAN Mode** lets each Coolscan strip preview frame move 55 mm each way, on every roll.
+
+*   **Auto Stitch**: stitches each two scans in a row after a strip scan. **Stitch XPAN Pairs** (right-click) does it for the selection.
 
 ---
 
