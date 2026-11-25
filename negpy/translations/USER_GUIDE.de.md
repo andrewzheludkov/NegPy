@@ -632,7 +632,7 @@ Gilt für beide Scanner.
 *   **Ordner als Rolle**: Scans landen im Ordner selbst. Aus schreibt in einen Unterordner **Rolle**, und ein neuer Rollenname beginnt eine neue Rolle. **+** neben Rolle springt zum nächsten Namen (`Roll001` zu `Roll002`).
 *   **Format** und **Dateiname** (Filmscanner): TIFF oder TIFF (mono) für S/W, und das Muster für den Dateinamen (`{{ date }}`, `{{ seq }}`).
 
-<!-- panel:scan_strip src:2f5fe859 -->
+<!-- panel:scan_strip src:122ca17f -->
 ### Streifenvorschau
 
 Zeigt den ganzen Streifen, um die Bilder vor dem Scan zu platzieren und zu wählen. **Bildausschnitt anwenden** behält den Bildausschnitt, und **Scan** scannt. **Vorschau stoppen** beendet eine Vorschau vorzeitig.
@@ -641,5 +641,5 @@ Zeigt den ganzen Streifen, um die Bilder vor dem Scan zu platzieren und zu wähl
 *   **Versatz**: verschiebt jedes Bild entlang des Films, damit es zu den Bildern passt. Der weiße Rahmen zeigt das Bild, das NegPy gefunden hat.
 *   **Drift**: ein Versatz, der von Bild zu Bild wächst.
 *   Der Regler unter jeder Kachel verschiebt nur dieses Bild. Mit **XPAN-Modus** auf dem Rollen-Tab sind bis zu 55 mm möglich.
-*   **Nach dem Scan stitchen** (Rechtsklick auf eine Kachel, XPAN-Modus): verbindet das Bild mit seinem Nachbarn. Nach dem Scan stitcht NegPy das Paar. Das zweite Bild wird mit der Belichtung des ersten gescannt.
+*   **Nach dem Scan stitchen** (Rechtsklick auf eine Kachel, XPAN-Modus): verbindet das Bild mit seinem Nachbarn. NegPy stitcht das Paar, sobald beide Bilder gescannt sind. Mit **Gemeinsame Belichtung** wird das zweite Bild mit der Belichtung des ersten gescannt.
 *   **Größe** legt die Kachelgröße fest. **Alle**, **Keine** und der Schalter jedes Bildes wählen Bilder. **Vorschau-Bild** scannt ein Bild erneut.

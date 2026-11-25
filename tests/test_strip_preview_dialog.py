@@ -1503,3 +1503,13 @@ def test_xpan_mode_marks_pairs_to_stitch_after_the_scan() -> None:
 def test_without_xpan_mode_no_pair_is_kept() -> None:
     dialog = StripPreviewDialog(_FakeController(), _discovery_device(), repo=_XpanRepo(False), initial_stitch_pairs=(2,))
     assert dialog.stitch_pairs() == ()
+
+
+def test_a_marked_pair_can_meter_each_frame_apart() -> None:
+    dialog = StripPreviewDialog(
+        _FakeController(), _discovery_device(), repo=_XpanRepo(True), initial_stitch_pairs=(1, 3), initial_separate_exposure_pairs=(3, 5)
+    )
+    assert dialog.separate_exposure_pairs() == (3,)
+    dialog._set_shared_exposure(1, False)
+    dialog._set_shared_exposure(3, True)
+    assert dialog.separate_exposure_pairs() == (1,)

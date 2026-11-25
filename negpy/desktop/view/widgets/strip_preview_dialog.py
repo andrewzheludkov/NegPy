@@ -196,6 +196,7 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         initial_offset_modifier: float = 0.0,
         initial_frame_offsets: dict[int, float] | None = None,
         initial_stitch_pairs: tuple[int, ...] = (),
+        initial_separate_exposure_pairs: tuple[int, ...] = (),
         initial_tile_height: int = _TILE_H,
         film_format: str | None = None,
         film_type: str = "negative",
@@ -236,6 +237,8 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         self._initial_frame_offsets = dict(initial_frame_offsets or {})
         # First frames of the pairs to stitch after the scan (XPAN Mode): frame N pairs with N+1.
         self._stitch_pairs: set[int] = set(initial_stitch_pairs) if self._xpan else set()
+        # Marked pairs that meter each frame on its own instead of sharing the first frame's exposure.
+        self._separate_exposure: set[int] = set(initial_separate_exposure_pairs) & self._stitch_pairs
         self._tile_h = max(_TILE_H_MIN, min(_TILE_H_MAX, int(initial_tile_height)))
         # Columns the grid is currently laid out in, and the stretch cells pinning it top-left.
         self._cols = _TILES_PER_ROW
@@ -568,6 +571,10 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         """First frames of the pairs to stitch after the scan: frame N pairs with N+1."""
         return tuple(sorted(self._stitch_pairs))
 
+    def separate_exposure_pairs(self) -> tuple[int, ...]:
+        """Marked pairs whose frames meter on their own."""
+        return tuple(sorted(self._separate_exposure & self._stitch_pairs))
+
     def _pair_of(self, frame: int) -> int | None:
         """The first frame of the pair that holds *frame*, or None."""
         if frame in self._stitch_pairs:
@@ -581,6 +588,12 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
             menu.addAction(tr("Do Not Stitch {first}+{second}", first=first, second=first + 1)).triggered.connect(
                 lambda: self._set_pair(first, False)
             )
+            shared = menu.addAction(tr("Shared Exposure"))
+            shared.setCheckable(True)
+            shared.setChecked(first not in self._separate_exposure)
+            shared.setToolTip(tr("Scan the second frame at the exposure of the first, so the halves match."))
+            shared.toggled.connect(lambda on: self._set_shared_exposure(first, on))
+            menu.setToolTipsVisible(True)
         else:
             for start in (frame, frame - 1):
                 if (
@@ -604,6 +617,12 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         for frame in (first, first + 1):
             if (tile := self._tiles.get(frame)) is not None:
                 self._sync_pair_cue(tile)
+
+    def _set_shared_exposure(self, first: int, shared: bool) -> None:
+        if shared:
+            self._separate_exposure.discard(first)
+        else:
+            self._separate_exposure.add(first)
 
     def _sync_pair_cue(self, tile: _Tile) -> None:
         first = self._pair_of(tile.frame)
@@ -852,6 +871,7 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         self._initial_windows = {}
         self._initial_frame_offsets = {}
         self._stitch_pairs.clear()
+        self._separate_exposure.clear()
         if self._discovers:
             for tile in self._tiles.values():
                 self._strip.removeWidget(tile.widget)

@@ -70,6 +70,8 @@ class BatchRequest:
     # First frames of the pairs the strip preview marks for a stitch: frame N pairs with N+1.
     # Frame N+1 scans at frame N's exposures, so the two halves of one picture match.
     stitch_pairs: tuple[int, ...] = ()
+    # Marked pairs whose second frame meters on its own instead.
+    separate_exposure_pairs: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -253,7 +255,7 @@ class ScanWorker(QObject):
             service = self._ensure_service()
             frames = list(req.frames) or self._whole_strip(service, req)
             total = max(1, len(frames))
-            leaders = {f + 1: f for f in req.stitch_pairs}
+            leaders = {f + 1: f for f in req.stitch_pairs if f not in req.separate_exposure_pairs}
             pair_exposures: dict[int, dict[str, int]] = {}
             for index, frame in enumerate(frames):
                 if self._cancel_event.is_set():

@@ -1104,16 +1104,22 @@ def _plain(tag):
     return {"name": tag, "path": f"/{tag}.tif", "hash": f"h_{tag}"}
 
 
-def test_marked_pairs_stitch_after_the_batch(monkeypatch):
+def test_a_marked_pair_stitches_as_soon_as_both_frames_are_scanned(monkeypatch):
     from negpy.desktop.controller import AppController
 
     c, queued = _xpan_controller(monkeypatch, [_plain(t) for t in "abcde"])
     c.stitch_pairs = lambda pairs: AppController.stitch_pairs(c, pairs)
     c._batch_stitch_pairs = (1, 3, 5)
-    c._batch_paths = {n + 1: f"/{t}.tif" for n, t in enumerate("abcde")}
-    AppController._on_scan_batch_finished(c, list(c._batch_paths.values()))
+    c._batch_paths = {}
+    AppController._on_scan_frame_done(c, 1, "/a.tif")
+    assert not c.stitch_requested.emit.called
+    AppController._on_scan_frame_done(c, 2, "/b.tif")
     first = c.stitch_requested.emit.call_args.args[0]
     assert [f["path"] for f in first.files] == ["/a.tif", "/b.tif"]
+
+    AppController._on_scan_frame_done(c, 3, "/c.tif")
+    AppController._on_scan_frame_done(c, 4, "/d.tif")  # queued behind the pair in flight
+    assert c.stitch_requested.emit.call_count == 1
 
     AppController._on_stitch_error(c, "Could not find overlap between the selected frames")
     _drain(queued)
@@ -1128,7 +1134,8 @@ def test_marked_pairs_stitch_after_the_batch(monkeypatch):
     }
     AppController._on_stitch_registered(c, payload)
     _drain(queued)
-    assert c.stitch_requested.emit.call_count == 2  # frame 5 has no scanned partner
+    AppController._on_scan_frame_done(c, 5, "/e.tif")  # frame 6 never comes
+    assert c.stitch_requested.emit.call_count == 2
     assert (c._xpan_stitched, c._xpan_skipped, c._xpan_pairs) == (1, 1, None)
 
 

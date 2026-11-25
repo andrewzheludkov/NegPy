@@ -878,7 +878,7 @@ Shows the whole strip, to place and pick the frames before the scan. **Apply Fra
 *   **Offset**: moves every frame along the film to line it up with the pictures. The white box shows the frame NegPy found.
 *   **Drift**: an offset that grows from frame to frame.
 *   The slider under each tile moves that frame alone. **XPAN Mode** on the Roll tab lets it move up to 55 mm.
-*   **Stitch After Scan** (right-click a tile, XPAN Mode): pairs the frame with its neighbor. After the scan, NegPy stitches the pair. The second frame scans at the exposure of the first.
+*   **Stitch After Scan** (right-click a tile, XPAN Mode): pairs the frame with its neighbor. NegPy stitches the pair once both frames are scanned. With **Shared Exposure** on, the second frame scans at the exposure of the first.
 *   **Size** sets the tile size. **All**, **None** and each frame's toggle pick frames. **Preview frame** scans one frame again.
 
 ---

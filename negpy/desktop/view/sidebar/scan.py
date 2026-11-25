@@ -218,7 +218,7 @@ class ScanSidebar(QWidget):
         if settings.backend not in {bid for bid, _ in backend_choices()}:
             settings = replace(settings, backend=DEFAULT_BACKEND_ID)
         # Frame picks belong to the loaded strip; the unit can return it while NegPy is closed.
-        return replace(settings, selected_frames=(), frame_windows={}, frame_offsets={}, stitch_pairs=())
+        return replace(settings, selected_frames=(), frame_windows={}, frame_offsets={}, stitch_pairs=(), separate_exposure_pairs=())
 
     def _save_settings(self) -> None:
         from dataclasses import asdict
@@ -1143,6 +1143,7 @@ class ScanSidebar(QWidget):
                 initial_offset_modifier=self._settings.frame_offset_modifier_mm,
                 initial_frame_offsets=self._settings.frame_offsets,
                 initial_stitch_pairs=self._settings.stitch_pairs,
+                initial_separate_exposure_pairs=self._settings.separate_exposure_pairs,
                 initial_tile_height=self._settings.strip_tile_height,
                 film_format=self._film_format(),
                 film_type=self._film_type(),
@@ -1158,6 +1159,7 @@ class ScanSidebar(QWidget):
                     frame_offset_modifier_mm=dialog.frame_offset_modifier(),
                     frame_offsets=dialog.frame_offsets(),
                     stitch_pairs=dialog.stitch_pairs(),
+                    separate_exposure_pairs=dialog.separate_exposure_pairs(),
                     strip_tile_height=dialog.tile_height(),
                 )
                 self._update_scan_window_status()
@@ -1547,6 +1549,7 @@ class ScanSidebar(QWidget):
                         eject_when_done=self._settings.eject_after_batch,
                         as_roll=as_roll,
                         stitch_pairs=self._settings.stitch_pairs if xpan else (),
+                        separate_exposure_pairs=self._settings.separate_exposure_pairs,
                     )
                 )
             else:
@@ -1637,7 +1640,9 @@ class ScanSidebar(QWidget):
 
         stale = bool(self._settings.selected_frames or self._settings.frame_windows or self._settings.frame_offsets)
         if stale:
-            self.settings = replace(self._settings, selected_frames=(), frame_windows={}, frame_offsets={}, stitch_pairs=())
+            self.settings = replace(
+                self._settings, selected_frames=(), frame_windows={}, frame_offsets={}, stitch_pairs=(), separate_exposure_pairs=()
+            )
             self._update_scan_window_status()
             self._update_summary()
         return stale

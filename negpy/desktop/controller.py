@@ -7434,14 +7434,14 @@ class AppController(QObject):
         self._batch_paths[frame] = path
         self._discover_scanned([path], path, self._scan_as_roll, select=not self._batch_frame_selected)
         self._batch_frame_selected = True
+        # A pair stitches as soon as its second frame is in, while the batch scans on.
+        first = frame - 1
+        if first in self._batch_stitch_pairs and first in self._batch_paths:
+            self.stitch_pairs([(self._batch_paths[first], path)])
 
     def _on_scan_batch_finished(self, paths: list) -> None:
         self.scan_batch_finished.emit(paths)
-        done = self._batch_paths
-        pairs = [(done[f], done[f + 1]) for f in self._batch_stitch_pairs if f in done and f + 1 in done]
         self._batch_stitch_pairs = ()
-        if pairs:
-            self.stitch_pairs(pairs)
 
     def _discover_scanned(
         self, paths: List[str], selected: str, as_roll: bool, triplet: Optional[dict] = None, select: bool = True
@@ -7494,7 +7494,10 @@ class AppController(QObject):
     # ── Pairs marked in the strip preview, stitched after the batch ───────
 
     def stitch_pairs(self, pairs: List[Tuple[str, str]]) -> None:
-        """Stitch each (first, second) pair of scans in turn. A pair with no overlap stays as two frames."""
+        """Queue (first, second) pairs of scans to stitch in turn. A pair with no overlap stays as two frames."""
+        if self._xpan_pairs is not None:
+            self._xpan_pairs.extend(pairs)
+            return
         self._xpan_pairs = list(pairs)
         self._xpan_stitched = 0
         self._xpan_skipped = 0
@@ -7523,7 +7526,7 @@ class AppController(QObject):
         # Discovery of the last scans runs as a batch too: wait for it, but not forever.
         if self._active_batch is not None or None in files:
             self._xpan_waits += 1
-            if self._xpan_waits <= 120:
+            if self._xpan_waits <= 300:
                 QTimer.singleShot(1000, self._next_xpan_pair)
                 return
         pairs.pop(0)

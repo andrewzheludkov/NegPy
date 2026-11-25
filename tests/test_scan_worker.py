@@ -886,3 +886,13 @@ def test_run_batch_scans_the_second_frame_of_a_pair_at_the_first_frame_exposures
     worker.run_batch(dataclasses.replace(_batch_request((1, 2, 3, 4)), stitch_pairs=(1,)))
 
     assert service.given == {1: None, 2: {"r": 100}, 3: None, 4: None}
+
+
+def test_run_batch_meters_a_pair_apart_when_asked() -> None:
+    worker = ScanWorker()
+    service = _PairService()
+    worker._service = service  # type: ignore[assignment]
+
+    worker.run_batch(dataclasses.replace(_batch_request((1, 2, 3, 4)), stitch_pairs=(1, 3), separate_exposure_pairs=(3,)))
+
+    assert service.given == {1: None, 2: {"r": 100}, 3: None, 4: None}

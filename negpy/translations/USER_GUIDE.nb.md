@@ -632,7 +632,7 @@ Felles for begge skannerne.
 *   **Mappe som rull**: skanninger legges i selve mappen. Av skriver inn i en undermappe **Rull**, og et nytt rullnavn starter en ny rull. **+** ved siden av Rull går til neste navn (`Roll001` til `Roll002`).
 *   **Format** og **Filnavn** (filmskanner): TIFF, eller TIFF (mono) for S/H, og filnavnmønsteret (`{{ date }}`, `{{ seq }}`).
 
-<!-- panel:scan_strip src:2f5fe859 -->
+<!-- panel:scan_strip src:122ca17f -->
 ### Stripeforhåndsvisning
 
 Viser hele stripen, for å plassere og velge bildene før skanningen. **Bruk innramming** beholder innrammingen og **Skann** skanner. **Stopp forhåndsvisning** avslutter en forhåndsvisning tidlig.
@@ -641,5 +641,5 @@ Viser hele stripen, for å plassere og velge bildene før skanningen. **Bruk inn
 *   **Forskyvning**: flytter hvert bilde langs filmen for å rette det inn etter bildene. Den hvite boksen viser bildet NegPy fant.
 *   **Avdrift**: en forskyvning som vokser fra bilde til bilde.
 *   Glidebryteren under hver flis flytter bare det bildet. Med **XPAN-modus** på Rull-fanen går den opptil 55 mm.
-*   **Sy sammen etter skanning** (høyreklikk en flis, XPAN-modus): parer bildet med naboen. Etter skanningen syr NegPy sammen paret. Det andre bildet skannes med eksponeringen til det første.
+*   **Sy sammen etter skanning** (høyreklikk en flis, XPAN-modus): parer bildet med naboen. NegPy syr sammen paret så snart begge bildene er skannet. Med **Delt eksponering** skannes det andre bildet med eksponeringen til det første.
 *   **Størrelse** angir flisstørrelsen. **Alle**, **Ingen** og bryteren for hvert bilde velger bilder. **Forhåndsvis bilde** skanner ett bilde på nytt.

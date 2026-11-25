@@ -868,7 +868,7 @@ Condiviso da entrambi gli scanner.
 *   **Cartella come rullino**: le scansioni vanno nella cartella stessa. Se disattivato, scrive in una sottocartella **Rullino**, e un nuovo nome di Rullino avvia un nuovo rullino. **+** accanto a Rullino passa al nome successivo (da `Roll001` a `Roll002`).
 *   **Formato** e **Nome file** (scanner per pellicola): TIFF, oppure TIFF (mono) per il B/N, e il modello del nome file (`{{ date }}`, `{{ seq }}`).
 
-<!-- panel:scan_strip src:2f5fe859 -->
+<!-- panel:scan_strip src:122ca17f -->
 ### Anteprima della striscia
 
 Mostra l'intera striscia, per posizionare e scegliere i fotogrammi prima della scansione. **Applica inquadratura** conserva l'inquadratura e **Scansiona** esegue la scansione. **Ferma anteprima** termina in anticipo un'anteprima.
@@ -877,7 +877,7 @@ Mostra l'intera striscia, per posizionare e scegliere i fotogrammi prima della s
 *   **Scostamento**: sposta ogni fotogramma lungo la pellicola per allinearlo alle immagini. Il riquadro bianco mostra il fotogramma trovato da NegPy.
 *   **Deriva**: uno scostamento che cresce da un fotogramma all'altro.
 *   Il cursore sotto ogni tessera sposta solo quel fotogramma. Con **Modalità XPAN** nella scheda Rullino arriva fino a 55 mm.
-*   **Unisci dopo la scansione** (clic destro su una tessera, Modalità XPAN): abbina il fotogramma al vicino. Dopo la scansione NegPy unisce la coppia. Il secondo fotogramma usa l'esposizione del primo.
+*   **Unisci dopo la scansione** (clic destro su una tessera, Modalità XPAN): abbina il fotogramma al vicino. NegPy unisce la coppia appena entrambi i fotogrammi sono scansionati. Con **Esposizione condivisa** il secondo fotogramma usa l'esposizione del primo.
 *   **Dimensioni** imposta la dimensione delle tessere. **Tutti**, **Nessuno** e l'interruttore di ogni fotogramma scelgono i fotogrammi. **Anteprima del fotogramma** scansiona di nuovo un fotogramma.
 
 ---
