@@ -22,6 +22,10 @@ import numpy as np
 from negpy.infrastructure.scanners.base import ScannerCapabilities
 
 
+# How far a frame on a measured strip moves each way, in mm of film.
+MEASURED_NUDGE_MM = 55.0
+
+
 def effective_pitch_mm(caps: ScannerCapabilities) -> float:
     """Feed-axis distance between frame positions, falling back to the frame's long
     side when the transport does not report one. 0.0 when neither is known."""

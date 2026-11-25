@@ -51,7 +51,7 @@ from negpy.desktop.view.widgets.step_combo import StepCombo
 from negpy.desktop.workers.scan_worker import RollPreviewRequest
 from negpy.infrastructure.scanners.base import ScannerDevice
 from negpy.infrastructure.scanners.params import clamp_frame_offset_mm
-from negpy.infrastructure.scanners.roll import RollPreview, effective_pitch_mm
+from negpy.infrastructure.scanners.roll import MEASURED_NUDGE_MM, RollPreview, effective_pitch_mm
 
 _GUIDE_KEY = "scan_strip"  # the <!-- panel: --> marker its ⓘ reads out of the user guide
 _CLAMP_NOTICE = tr("Offset held at the frame pitch")
@@ -256,8 +256,8 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         top.setSpacing(THEME.space_2xl)
 
         self.offset_slider = _ZeroTickSlider()
-        # On a measured strip, a frame moves in the two directions by one frame or less, as in
-        # Nikon Scan. The transport keeps each frame on the strip and gives the offset it used.
+        # On a measured strip, a frame moves in the two directions by up to MEASURED_NUDGE_MM.
+        # The transport keeps each frame on the strip and gives the offset it used.
         # A feeder cannot move back. It gives black data after one pitch from the frame start.
         span = self._measured_span_tenths()
         self.offset_slider.setRange(-span if self._discovers else 0, span if self._discovers else 100)
@@ -557,7 +557,9 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         return self.drift_slider.value() / 100.0
 
     def _measured_span_tenths(self) -> int:
-        """The span of an offset slider on a measured strip, in tenths of a mm. This is one frame pitch."""
+        """The span of an offset slider, in tenths of a mm: MEASURED_NUDGE_MM on a measured strip, else one pitch."""
+        if self._discovers:
+            return round(MEASURED_NUDGE_MM * 10)
         pitch = self._frame_pitch()
         return round(pitch * 10) if pitch else _MAX_MEASURED_OFFSET_TENTHS
 

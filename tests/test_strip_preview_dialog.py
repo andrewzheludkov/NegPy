@@ -895,13 +895,19 @@ def test_a_feeder_still_counts_the_frames_it_previews() -> None:
     assert dialog.status_strip.message() == "Previewing 3 frames…"
 
 
-def test_the_offset_on_a_measured_strip_goes_one_frame_pitch_in_each_direction() -> None:
-    # Nikon Scan moves a frame by one frame or less. The transport holds it on the strip.
+def test_the_offset_on_a_measured_strip_goes_55_mm_in_each_direction() -> None:
+    # The transport holds the frame on the strip.
     measured = StripPreviewDialog(_FakeController(), _discovery_device())
-    assert (measured.offset_slider.minimum(), measured.offset_slider.maximum()) == (-360, 360)
+    assert (measured.offset_slider.minimum(), measured.offset_slider.maximum()) == (-550, 550)
 
-    measured.offset_slider.setValue(4000)
-    assert measured.frame_offset() == measured._frame_pitch()
+    measured.offset_slider.setValue(6000)
+    assert measured.frame_offset() == 55.0
+
+
+def test_a_tile_slider_on_a_measured_strip_goes_55_mm_in_each_direction() -> None:
+    dialog = _measured(_FakeController())
+    tile = dialog._tiles[1].offset_slider
+    assert (tile.minimum(), tile.maximum()) == (-550, 550)
 
 
 def test_a_saved_negative_offset_comes_back_as_it_was() -> None:
@@ -1202,7 +1208,7 @@ def test_the_offset_sliders_reach_a_boundary_several_millimetres_out() -> None:
     ctl = _FakeController()
     grown = StripPreviewDialog(ctl, _device(3))
 
-    assert dialog.offset_slider.minimum() == -360 and dialog.offset_slider.maximum() == 360  # one 36 mm pitch
+    assert dialog.offset_slider.minimum() == -550 and dialog.offset_slider.maximum() == 550
     # A feeder cannot back up, and its forward reach is unchanged.
     assert grown.offset_slider.minimum() == 0 and grown.offset_slider.maximum() == 100
     tile = grown._tiles[1].offset_slider
