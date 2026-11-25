@@ -7,8 +7,10 @@ import subprocess
 
 import PyInstaller.__main__
 
-# Define the application name
-APP_NAME = "NegPy"
+# NEGPY_APP_NAME builds a variant that installs beside NegPy.app. On macOS it gets its own
+# bundle id and its own data folder (~/Documents/<name>), so it shares no settings, edits or
+# launch hand-off with the original.
+APP_NAME = os.environ.get("NEGPY_APP_NAME", "NegPy")
 
 # Read version
 VERSION = "dev"
@@ -160,6 +162,8 @@ elif is_macos:
 
     macos_target_arch = get_macos_target_arch()
     params.append(f"--target-arch={macos_target_arch}")
+    if APP_NAME != "NegPy":
+        params.append(f"--osx-bundle-identifier=io.github.negpy.{APP_NAME.lower()}")
 
 
 def package_linux():
@@ -477,6 +481,20 @@ def check_bundled_dylib_collisions():
         raise RuntimeError(f"a bundled dylib collision leaves a consumer missing symbols:\n{detail}")
 
 
+def set_variant_user_dir():
+    """Point a renamed variant at its own data folder: Launch Services passes LSEnvironment to the app."""
+    if APP_NAME == "NegPy":
+        return
+    import plistlib
+
+    plist_path = os.path.join("dist", f"{APP_NAME}.app", "Contents", "Info.plist")
+    with open(plist_path, "rb") as f:
+        info = plistlib.load(f)
+    info.setdefault("LSEnvironment", {})["NEGPY_USER_DIR"] = f"~/Documents/{APP_NAME}"
+    with open(plist_path, "wb") as f:
+        plistlib.dump(info, f)
+
+
 def codesign_macos_app():
     """Apply a fresh, consistent ad-hoc signature over the whole .app.
 
@@ -556,6 +574,7 @@ def build():
     elif is_macos:
         fix_lcms2_dylib_collision()
         check_bundled_dylib_collisions()
+        set_variant_user_dir()
         codesign_macos_app()
         package_macos()
 

@@ -22,6 +22,10 @@ on:
         required: true
         default: true
         type: boolean
+      app_name:
+        description: 'App name; another name installs beside NegPy.app with its own data folder'
+        required: false
+        default: 'NegPy'
 
 jobs:
   setup:
@@ -123,6 +127,8 @@ jobs:
         run: echo "NEGPY_MACOS_ARCH=${{ matrix.arch }}" >> "$GITHUB_ENV"
 
       - name: Build and Package Application
+        env:
+          NEGPY_APP_NAME: ${{ github.event.inputs.app_name || 'NegPy' }}
         run: uv run python build.py
 
       - name: List dist directory
