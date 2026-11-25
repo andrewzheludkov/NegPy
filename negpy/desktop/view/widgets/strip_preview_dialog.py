@@ -51,7 +51,7 @@ from negpy.desktop.view.widgets.step_combo import StepCombo
 from negpy.desktop.workers.scan_worker import RollPreviewRequest
 from negpy.infrastructure.scanners.base import ScannerDevice
 from negpy.infrastructure.scanners.params import clamp_frame_offset_mm
-from negpy.infrastructure.scanners.roll import MEASURED_NUDGE_MM, RollPreview, effective_pitch_mm
+from negpy.infrastructure.scanners.roll import MEASURED_NUDGE_MM, XPAN_MODE_SETTING, RollPreview, effective_pitch_mm
 
 _GUIDE_KEY = "scan_strip"  # the <!-- panel: --> marker its ⓘ reads out of the user guide
 _CLAMP_NOTICE = tr("Offset held at the frame pitch")
@@ -202,6 +202,7 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         super().__init__(parent)
         self._controller = controller
         self._repo = repo
+        self._xpan = bool(repo.get_global_setting(XPAN_MODE_SETTING, False)) if repo is not None else False
         self._device = device
         self._film_format = film_format
         self._film_type = film_type
@@ -256,8 +257,8 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         top.setSpacing(THEME.space_2xl)
 
         self.offset_slider = _ZeroTickSlider()
-        # On a measured strip, a frame moves in the two directions by up to MEASURED_NUDGE_MM.
-        # The transport keeps each frame on the strip and gives the offset it used.
+        # On a measured strip, a frame moves in the two directions by one pitch, or by
+        # MEASURED_NUDGE_MM in XPAN Mode. The transport keeps each frame on the strip.
         # A feeder cannot move back. It gives black data after one pitch from the frame start.
         span = self._measured_span_tenths()
         self.offset_slider.setRange(-span if self._discovers else 0, span if self._discovers else 100)
@@ -557,8 +558,8 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         return self.drift_slider.value() / 100.0
 
     def _measured_span_tenths(self) -> int:
-        """The span of an offset slider, in tenths of a mm: MEASURED_NUDGE_MM on a measured strip, else one pitch."""
-        if self._discovers:
+        """The span of an offset slider, in tenths of a mm: MEASURED_NUDGE_MM on a measured strip in XPAN Mode, else one pitch."""
+        if self._discovers and self._xpan:
             return round(MEASURED_NUDGE_MM * 10)
         pitch = self._frame_pitch()
         return round(pitch * 10) if pitch else _MAX_MEASURED_OFFSET_TENTHS
@@ -573,7 +574,12 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         return tile.offset_slider.value() / 10.0 if tile else self._initial_frame_offsets.get(frame, 0.0)
 
     def _raw_offset_for_frame(self, frame: int) -> float:
-        return self.frame_offset() + (frame - 1) * self.frame_offset_modifier() + self._frame_delta(frame)
+        """On a measured strip, held within one slider span either way, so XPAN Mode alone moves a frame past a pitch."""
+        raw = self.frame_offset() + (frame - 1) * self.frame_offset_modifier() + self._frame_delta(frame)
+        if not self._discovers:
+            return raw
+        span = self._measured_span_tenths() / 10.0
+        return max(-span, min(span, raw))
 
     def _offset_for_frame(self, frame: int) -> float:
         """Effective offset for a frame position: base + (N-1)·drift + the frame's own correction.
