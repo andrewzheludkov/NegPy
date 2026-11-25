@@ -410,7 +410,7 @@ Korrigiert Farbfehler, die von Lichtquelle, Kamera und Film kommen.
 
 **Farbton-Trimmung** (Kamera mit schmalbandigem Licht): dreht alle Farben auf dem Farbkreis, für ein Licht, das Gelb orange oder Grün oliv färbt. Lass den Wert bei weißem Licht auf 0. Sie wirkt auch bei Dias, wo das Sensor-Farbvermischungsprofil nicht wirkt.
 
-<!-- panel:assembly src:eeb75aab -->
+<!-- panel:assembly src:e8ef30cf -->
 ### 10.8 Bildzusammenstellung
 
 Wie aus Dateien Bilder werden. Jede Rolle behält hier ihre eigenen Einstellungen.
@@ -436,9 +436,7 @@ Klicke mit der rechten Maustaste auf eine Hälfte für **Teilung für dieses Bil
 
 #### XPAN
 
-**XPAN-Modus** lässt jedes Bild der Coolscan-Streifenvorschau 55 mm in jede Richtung verschieben, auf jeder Rolle.
-
-*   **Auto-Stitch**: stitcht nach einem Streifenscan je zwei aufeinanderfolgende Scans. **XPAN-Paare stitchen** (Rechtsklick) macht das für die Auswahl.
+**XPAN-Modus** lässt jedes Bild in der Coolscan-Streifenvorschau bis zu 55 mm in jede Richtung verschieben. Er gilt für alle Rollen.
 
 <!-- panel:metadata_gear src:208e1498 -->
 ### Analoge Ausrüstung
@@ -634,7 +632,7 @@ Gilt für beide Scanner.
 *   **Ordner als Rolle**: Scans landen im Ordner selbst. Aus schreibt in einen Unterordner **Rolle**, und ein neuer Rollenname beginnt eine neue Rolle. **+** neben Rolle springt zum nächsten Namen (`Roll001` zu `Roll002`).
 *   **Format** und **Dateiname** (Filmscanner): TIFF oder TIFF (mono) für S/W, und das Muster für den Dateinamen (`{{ date }}`, `{{ seq }}`).
 
-<!-- panel:scan_strip src:095ee174 -->
+<!-- panel:scan_strip src:2f5fe859 -->
 ### Streifenvorschau
 
 Zeigt den ganzen Streifen, um die Bilder vor dem Scan zu platzieren und zu wählen. **Bildausschnitt anwenden** behält den Bildausschnitt, und **Scan** scannt. **Vorschau stoppen** beendet eine Vorschau vorzeitig.
@@ -643,4 +641,5 @@ Zeigt den ganzen Streifen, um die Bilder vor dem Scan zu platzieren und zu wähl
 *   **Versatz**: verschiebt jedes Bild entlang des Films, damit es zu den Bildern passt. Der weiße Rahmen zeigt das Bild, das NegPy gefunden hat.
 *   **Drift**: ein Versatz, der von Bild zu Bild wächst.
 *   Der Regler unter jeder Kachel verschiebt nur dieses Bild. Mit **XPAN-Modus** auf dem Rollen-Tab sind bis zu 55 mm möglich.
+*   **Nach dem Scan stitchen** (Rechtsklick auf eine Kachel, XPAN-Modus): verbindet das Bild mit seinem Nachbarn. Nach dem Scan stitcht NegPy das Paar. Das zweite Bild wird mit der Belichtung des ersten gescannt.
 *   **Größe** legt die Kachelgröße fest. **Alle**, **Keine** und der Schalter jedes Bildes wählen Bilder. **Vorschau-Bild** scannt ein Bild erneut.

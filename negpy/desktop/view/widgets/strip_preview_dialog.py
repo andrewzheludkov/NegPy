@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QPushButton,
     QScrollArea,
     QSlider,
@@ -167,6 +168,7 @@ class _Tile:
         offset_slider: _ZeroTickSlider,
         widget: QWidget,
         offset_value: QLabel,
+        pair_label: QLabel,
     ) -> None:
         self.frame = frame
         self.previewed_offset: float | None = None  # offset the shown preview was scanned at
@@ -178,6 +180,7 @@ class _Tile:
         self.offset_slider = offset_slider
         self.widget = widget
         self.offset_value = offset_value
+        self.pair_label = pair_label
 
 
 class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
@@ -192,6 +195,7 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         initial_offset: float = 0.0,
         initial_offset_modifier: float = 0.0,
         initial_frame_offsets: dict[int, float] | None = None,
+        initial_stitch_pairs: tuple[int, ...] = (),
         initial_tile_height: int = _TILE_H,
         film_format: str | None = None,
         film_type: str = "negative",
@@ -230,6 +234,8 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         initial_windows = initial_windows or {}
         initial_selected = tuple(initial_selected or ())
         self._initial_frame_offsets = dict(initial_frame_offsets or {})
+        # First frames of the pairs to stitch after the scan (XPAN Mode): frame N pairs with N+1.
+        self._stitch_pairs: set[int] = set(initial_stitch_pairs) if self._xpan else set()
         self._tile_h = max(_TILE_H_MIN, min(_TILE_H_MAX, int(initial_tile_height)))
         # Columns the grid is currently laid out in, and the stretch cells pinning it top-left.
         self._cols = _TILES_PER_ROW
@@ -448,6 +454,12 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         oh.addWidget(preview_btn)
         offset_value = QLabel()
         oh.addWidget(offset_value)
+        pair_label = QLabel()
+        pair_label.setVisible(False)
+        oh.addWidget(pair_label)
+        if self._xpan:
+            label.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            label.customContextMenuRequested.connect(lambda pos, f=frame, w=label: self._on_tile_menu(f, w.mapToGlobal(pos)))
         grid.addWidget(overlay, 0, 0, Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         offset_slider = _ZeroTickSlider()
@@ -458,8 +470,9 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         offset_slider.valueChanged.connect(lambda _v, f=frame: self._on_tile_offset_changed(f))
         grid.addWidget(offset_slider, 1, 0)
 
-        tile = _Tile(frame, label, toggle, preview_btn, offset_slider, widget, offset_value)
+        tile = _Tile(frame, label, toggle, preview_btn, offset_slider, widget, offset_value, pair_label)
         self._sync_tile_offset_cue(tile)
+        self._sync_pair_cue(tile)
         return tile
 
     def _fitting_columns(self) -> int:
@@ -550,6 +563,53 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
             else:
                 merged.pop(frame, None)
         return merged
+
+    def stitch_pairs(self) -> tuple[int, ...]:
+        """First frames of the pairs to stitch after the scan: frame N pairs with N+1."""
+        return tuple(sorted(self._stitch_pairs))
+
+    def _pair_of(self, frame: int) -> int | None:
+        """The first frame of the pair that holds *frame*, or None."""
+        if frame in self._stitch_pairs:
+            return frame
+        return frame - 1 if frame - 1 in self._stitch_pairs else None
+
+    def _on_tile_menu(self, frame: int, at) -> None:
+        menu = QMenu(self)
+        first = self._pair_of(frame)
+        if first is not None:
+            menu.addAction(tr("Do Not Stitch {first}+{second}", first=first, second=first + 1)).triggered.connect(
+                lambda: self._set_pair(first, False)
+            )
+        else:
+            for start in (frame, frame - 1):
+                if (
+                    start >= 1
+                    and start + 1 in self._tiles
+                    and start in self._tiles
+                    and self._pair_of(start) is None
+                    and self._pair_of(start + 1) is None
+                ):
+                    menu.addAction(tr("Stitch {first}+{second} After Scan", first=start, second=start + 1)).triggered.connect(
+                        lambda _checked=False, s=start: self._set_pair(s, True)
+                    )
+        if not menu.isEmpty():
+            menu.exec(at)
+
+    def _set_pair(self, first: int, paired: bool) -> None:
+        if paired:
+            self._stitch_pairs.add(first)
+        else:
+            self._stitch_pairs.discard(first)
+        for frame in (first, first + 1):
+            if (tile := self._tiles.get(frame)) is not None:
+                self._sync_pair_cue(tile)
+
+    def _sync_pair_cue(self, tile: _Tile) -> None:
+        first = self._pair_of(tile.frame)
+        tile.pair_label.setVisible(first is not None)
+        if first is not None:
+            tile.pair_label.setText(tr("Stitch {first}+{second}", first=first, second=first + 1))
 
     def frame_offset(self) -> float:
         return self.offset_slider.value() / 10.0
@@ -791,6 +851,7 @@ class StripPreviewDialog(RollPreviewSignalsMixin, QDialog):
         self._initial_selected = ()
         self._initial_windows = {}
         self._initial_frame_offsets = {}
+        self._stitch_pairs.clear()
         if self._discovers:
             for tile in self._tiles.values():
                 self._strip.removeWidget(tile.widget)

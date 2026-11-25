@@ -1486,3 +1486,20 @@ def test_a_measured_strip_is_asked_for_a_half_frame_rolls_worth() -> None:
     dialog = StripPreviewDialog(controller, _discovery_device())
     dialog._on_preview_all()
     assert set(range(1, 81)) <= set(controller.preview_reqs[0].slots)
+
+
+def test_xpan_mode_marks_pairs_to_stitch_after_the_scan() -> None:
+    controller = _FakeController()
+    dialog = StripPreviewDialog(controller, _discovery_device(), repo=_XpanRepo(True), initial_stitch_pairs=(2,))
+    controller.deliver_all((1, 2, 3, 4))
+    assert dialog._tiles[3].pair_label.text() == "Stitch 2+3"
+
+    dialog._set_pair(2, False)
+    dialog._set_pair(3, True)
+    assert dialog.stitch_pairs() == (3,)
+    assert dialog._tiles[4].pair_label.isVisibleTo(dialog) and not dialog._tiles[2].pair_label.isVisibleTo(dialog)
+
+
+def test_without_xpan_mode_no_pair_is_kept() -> None:
+    dialog = StripPreviewDialog(_FakeController(), _discovery_device(), repo=_XpanRepo(False), initial_stitch_pairs=(2,))
+    assert dialog.stitch_pairs() == ()

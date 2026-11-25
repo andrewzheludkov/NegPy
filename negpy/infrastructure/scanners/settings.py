@@ -52,6 +52,8 @@ class ScannerSettings:
     selected_frames: tuple[int, ...] = ()
     # Per-frame feed-axis correction (mm) on top of frame_offset_mm + drift.
     frame_offsets: dict[int, float] = field(default_factory=dict)
+    # First frames of the pairs marked for a stitch after the scan: frame N pairs with N+1.
+    stitch_pairs: tuple[int, ...] = ()
     # Off keeps the strip loaded until Eject or the unit's own idle timeout.
     eject_after_batch: bool = True
     # One of nkscan_log.LEVELS.
@@ -82,6 +84,8 @@ class ScannerSettings:
             )
         if isinstance(self.selected_frames, list):
             object.__setattr__(self, "selected_frames", tuple(self.selected_frames))
+        if isinstance(self.stitch_pairs, list):
+            object.__setattr__(self, "stitch_pairs", tuple(int(f) for f in self.stitch_pairs))
         if isinstance(self.frame_offsets, dict):
             object.__setattr__(self, "frame_offsets", {int(k): float(v) for k, v in self.frame_offsets.items()})
 

@@ -1104,11 +1104,14 @@ def _plain(tag):
     return {"name": tag, "path": f"/{tag}.tif", "hash": f"h_{tag}"}
 
 
-def test_xpan_pairs_stitch_two_scans_in_a_row(monkeypatch):
+def test_marked_pairs_stitch_after_the_batch(monkeypatch):
     from negpy.desktop.controller import AppController
 
     c, queued = _xpan_controller(monkeypatch, [_plain(t) for t in "abcde"])
-    AppController.stitch_xpan_pairs(c, [f"/{t}.tif" for t in "abcde"])
+    c.stitch_pairs = lambda pairs: AppController.stitch_pairs(c, pairs)
+    c._batch_stitch_pairs = (1, 3, 5)
+    c._batch_paths = {n + 1: f"/{t}.tif" for n, t in enumerate("abcde")}
+    AppController._on_scan_batch_finished(c, list(c._batch_paths.values()))
     first = c.stitch_requested.emit.call_args.args[0]
     assert [f["path"] for f in first.files] == ["/a.tif", "/b.tif"]
 
@@ -1125,15 +1128,15 @@ def test_xpan_pairs_stitch_two_scans_in_a_row(monkeypatch):
     }
     AppController._on_stitch_registered(c, payload)
     _drain(queued)
-    assert c.stitch_requested.emit.call_count == 2  # "e" has no partner
+    assert c.stitch_requested.emit.call_count == 2  # frame 5 has no scanned partner
     assert (c._xpan_stitched, c._xpan_skipped, c._xpan_pairs) == (1, 1, None)
 
 
-def test_xpan_pairs_wait_for_the_scans_to_load(monkeypatch):
+def test_marked_pairs_wait_for_the_scans_to_load(monkeypatch):
     from negpy.desktop.controller import AppController
 
     c, queued = _xpan_controller(monkeypatch, [_plain("a")])
-    AppController.stitch_xpan_pairs(c, ["/a.tif", "/b.tif"])
+    AppController.stitch_pairs(c, [("/a.tif", "/b.tif")])
     assert not c.stitch_requested.emit.called and len(queued) == 1
 
     c.state.uploaded_files.append(_plain("b"))

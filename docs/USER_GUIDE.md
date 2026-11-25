@@ -635,9 +635,7 @@ Right-click a half for **Adjust Split for This Frame…** and **Reset Split to R
 
 #### XPAN
 
-**XPAN Mode** lets each Coolscan strip preview frame move 55 mm each way, on every roll.
-
-*   **Auto Stitch**: stitches each two scans in a row after a strip scan. **Stitch XPAN Pairs** (right-click) does it for the selection.
+**XPAN Mode** lets each frame in the Coolscan strip preview move up to 55 mm each way. It applies to all rolls.
 
 ---
 
@@ -880,6 +878,7 @@ Shows the whole strip, to place and pick the frames before the scan. **Apply Fra
 *   **Offset**: moves every frame along the film to line it up with the pictures. The white box shows the frame NegPy found.
 *   **Drift**: an offset that grows from frame to frame.
 *   The slider under each tile moves that frame alone. **XPAN Mode** on the Roll tab lets it move up to 55 mm.
+*   **Stitch After Scan** (right-click a tile, XPAN Mode): pairs the frame with its neighbor. After the scan, NegPy stitches the pair. The second frame scans at the exposure of the first.
 *   **Size** sets the tile size. **All**, **None** and each frame's toggle pick frames. **Preview frame** scans one frame again.
 
 ---

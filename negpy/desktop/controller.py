@@ -255,7 +255,6 @@ from negpy.features.toning.models import ToningConfig
 from negpy.infrastructure.capture.settings import WhiteCaptureMode
 from negpy.infrastructure.display.color_spaces import ColorSpaceRegistry
 from negpy.infrastructure.filesystem.watcher import FolderWatchService
-from negpy.infrastructure.scanners.roll import XPAN_AUTO_STITCH_SETTING, XPAN_MODE_SETTING
 from negpy.infrastructure.gpu.device import GPUDevice
 from negpy.infrastructure.gpu.resources import GPUTexture
 from negpy.infrastructure.storage.local_asset_store import LocalAssetStore
@@ -782,7 +781,9 @@ class AppController(QObject):
         self._pending_asset_discoveries: List[_DiscoveryRequest] = []
         self._active_discovery_keys: frozenset[str] = frozenset()
         self._pending_scanned_file: Optional[str] = None
-        # XPAN pairs still to stitch, None when no pair run is active; see stitch_xpan_pairs.
+        # Scan pairs still to stitch, None when no pair run is active; see stitch_pairs.
+        self._batch_stitch_pairs: Tuple[int, ...] = ()
+        self._batch_paths: Dict[int, str] = {}
         self._xpan_pairs: Optional[List[Tuple[str, str]]] = None
         self._xpan_stitched = 0
         self._xpan_skipped = 0
@@ -7390,6 +7391,8 @@ class AppController(QObject):
         self.scan_worker.prepare_scan()
         self._scan_as_roll = req.as_roll
         self._batch_frame_selected = False
+        self._batch_stitch_pairs = tuple(req.stitch_pairs)
+        self._batch_paths = {}
         self.scan_started.emit()
         self.scan_batch_requested.emit(req)
 
@@ -7428,14 +7431,17 @@ class AppController(QObject):
     def _on_scan_frame_done(self, frame: int, path: str) -> None:
         """Only a batch's first frame takes the selection."""
         self.scan_frame_done.emit(frame, path)
+        self._batch_paths[frame] = path
         self._discover_scanned([path], path, self._scan_as_roll, select=not self._batch_frame_selected)
         self._batch_frame_selected = True
 
     def _on_scan_batch_finished(self, paths: list) -> None:
         self.scan_batch_finished.emit(paths)
-        repo = self.session.repo
-        if repo.get_global_setting(XPAN_MODE_SETTING, False) and repo.get_global_setting(XPAN_AUTO_STITCH_SETTING, False):
-            self.stitch_xpan_pairs([str(p) for p in paths])
+        done = self._batch_paths
+        pairs = [(done[f], done[f + 1]) for f in self._batch_stitch_pairs if f in done and f + 1 in done]
+        self._batch_stitch_pairs = ()
+        if pairs:
+            self.stitch_pairs(pairs)
 
     def _discover_scanned(
         self, paths: List[str], selected: str, as_roll: bool, triplet: Optional[dict] = None, select: bool = True
@@ -7485,21 +7491,11 @@ class AppController(QObject):
             )
         )
 
-    # ── XPAN pairs: one XPAN frame is two scans in a row ───────────────
+    # ── Pairs marked in the strip preview, stitched after the batch ───────
 
-    def request_stitch_xpan_pairs(self) -> None:
-        """Stitch the selected frames two at a time, in file name order."""
-        files = [self.state.uploaded_files[i] for i in sorted(set(self.state.selected_indices)) if 0 <= i < len(self.state.uploaded_files)]
-        paths = sorted({f["path"] for f in files}, key=lambda p: os.path.basename(p).lower())
-        self.stitch_xpan_pairs(paths)
-
-    def stitch_xpan_pairs(self, paths: List[str]) -> None:
-        """Stitch *paths* as pairs (1+2, 3+4, ...). A pair with no overlap stays as two frames."""
-        pairs = [(paths[i], paths[i + 1]) for i in range(0, len(paths) - 1, 2)]
-        if not pairs:
-            self.set_status(tr("Select two or more frames to stitch"), 4000)
-            return
-        self._xpan_pairs = pairs
+    def stitch_pairs(self, pairs: List[Tuple[str, str]]) -> None:
+        """Stitch each (first, second) pair of scans in turn. A pair with no overlap stays as two frames."""
+        self._xpan_pairs = list(pairs)
         self._xpan_stitched = 0
         self._xpan_skipped = 0
         self._xpan_waits = 0
@@ -7518,7 +7514,7 @@ class AppController(QObject):
         if not pairs:
             self._xpan_pairs = None
             self.set_status(
-                tr("XPAN: stitched {done}, skipped {skipped}", done=self._xpan_stitched, skipped=self._xpan_skipped),
+                tr("Stitched {done} pairs, skipped {skipped}", done=self._xpan_stitched, skipped=self._xpan_skipped),
                 6000,
             )
             return
@@ -7589,7 +7585,7 @@ class AppController(QObject):
         self._end_batch("stitch")
         if self._xpan_current:
             self._xpan_skipped += 1
-            logger.info("XPAN pair not stitched: %s", message)
+            logger.info("Scan pair not stitched: %s", message)
             QTimer.singleShot(0, self._next_xpan_pair)
             return
         self.set_status(message, 6000, kind="error")

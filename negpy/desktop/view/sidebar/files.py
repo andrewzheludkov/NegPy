@@ -57,7 +57,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from negpy.infrastructure.scanners.roll import XPAN_MODE_SETTING
 from negpy.kernel.system.text import count_of
 from negpy.desktop.controller import SCENES_NEED_A_ROLL, AppController
 from negpy.desktop.session import AppState, can_edit_triplet, composite_kind, is_plain_triplet, trichrome_merge_indices
@@ -2589,8 +2588,6 @@ class FileBrowser(QWidget):
             menu.addSeparator()
             if multi:
                 menu.addAction(tr("Stitch Selected Frames")).triggered.connect(lambda: self.controller.request_stitch_selected())
-                if self.controller.session.repo.get_global_setting(XPAN_MODE_SETTING, False):
-                    menu.addAction(tr("Stitch XPAN Pairs")).triggered.connect(lambda: self.controller.request_stitch_xpan_pairs())
                 self._add_hdr_merge_action(menu, state)
                 if trichrome_merge_indices(state.uploaded_files, state.selected_indices):
                     menu.addAction(label_with_shortcut(tr("Merge Exposures (Trichrome)"), "triplet_merge")).triggered.connect(
