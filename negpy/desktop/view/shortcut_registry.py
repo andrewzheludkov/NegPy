@@ -64,6 +64,7 @@ REGISTRY: dict[str, ShortcutEntry] = {
     "straighten": ShortcutEntry("L", tr("Toggle the Level tool"), tr("Geometry")),
     "keystone_lines": ShortcutEntry("", tr("Toggle tilt/swing reference-lines tool"), tr("Geometry")),
     "pick_wb": ShortcutEntry("Shift+W", tr("Toggle WB picker"), tr("Tools")),
+    "toggle_selective_color": ShortcutEntry("", tr("Turn Selective Color on or off"), tr("Tools")),
     "manual_crop": ShortcutEntry("Shift+C", tr("Toggle manual crop"), tr("Tools")),
     "crop_guide_next": ShortcutEntry("O", tr("Next crop guide overlay"), tr("Geometry")),
     "crop_guide_orient": ShortcutEntry("Shift+O", tr("Rotate crop guide orientation"), tr("Geometry")),

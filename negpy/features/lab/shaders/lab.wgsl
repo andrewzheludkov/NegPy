@@ -17,6 +17,12 @@ struct LabUniforms {
     halation_g: f32,
     halation_b: f32,
     frame_short_px: f32,
+    // Selective Color per band (red..magenta): hue, sat and lum as two vec4 each.
+    sc_hue: array<vec4<f32>, 2>,
+    sc_sat: array<vec4<f32>, 2>,
+    sc_lum: array<vec4<f32>, 2>,
+    // x: 1 when the bands run, y: the Brightness power on Oklab L.
+    adjust: vec4<f32>,
 };
 
 @group(0) @binding(0) var input_tex: texture_2d<f32>;
@@ -341,6 +347,54 @@ fn hsv_to_rgb(c: vec3<f32>) -> vec3<f32> {
     else { return vec3<f32>(v, p, q); }
 }
 
+// Selective Color and Brightness, mirroring adjust_block in negpy_core/src/color.rs.
+const BAND_HUES = array<f32, 8>(29.0, 60.0, 110.0, 150.0, 194.0, 264.0, 305.0, 335.0);
+const HUE_SHIFT_DEG = 30.0;
+const LUM_GAIN = 0.4;
+const GRAY_CHROMA = 0.04;
+
+fn band_value(v: array<vec4<f32>, 2>, i: u32) -> f32 {
+    return v[i / 4u][i % 4u];
+}
+
+fn apply_adjust(rgb: vec3<f32>) -> vec3<f32> {
+    var lab = rgb_to_oklab(max(rgb, vec3<f32>(0.0)));
+    if (params.adjust.x > 0.5) {
+        let chroma = length(lab.yz);
+        var deg = degrees(atan2(lab.z, lab.y));
+        if (deg < 0.0) { deg += 360.0; }
+        var lo = 7u;
+        for (var i = 0u; i < 8u; i++) {
+            if (deg >= BAND_HUES[i]) { lo = i; }
+        }
+        let hi = (lo + 1u) % 8u;
+        var span = BAND_HUES[hi] - BAND_HUES[lo];
+        var d = deg - BAND_HUES[lo];
+        if (span <= 0.0) { span += 360.0; }
+        if (d < 0.0) { d += 360.0; }
+        let t = clamp(d / span, 0.0, 1.0);
+        let w = t * t * (3.0 - 2.0 * t);
+        let gt = clamp(chroma / GRAY_CHROMA, 0.0, 1.0);
+        let gate = gt * gt * (3.0 - 2.0 * gt);
+        let hue = mix(band_value(params.sc_hue, lo), band_value(params.sc_hue, hi), w);
+        let sat = mix(band_value(params.sc_sat, lo), band_value(params.sc_sat, hi), w);
+        let lum = mix(band_value(params.sc_lum, lo), band_value(params.sc_lum, hi), w);
+        let ang = radians(hue * HUE_SHIFT_DEG * gate);
+        let sn = sin(ang);
+        let cs = cos(ang);
+        let k = max(1.0 + sat, 0.0);
+        lab = vec3<f32>(
+            lab.x * max(1.0 + lum * LUM_GAIN * gate, 0.0),
+            (lab.y * cs - lab.z * sn) * k,
+            (lab.y * sn + lab.z * cs) * k,
+        );
+    }
+    if (params.adjust.y != 1.0) {
+        lab.x = pow(clamp(lab.x, 0.0, 1.0), params.adjust.y);
+    }
+    return clamp(oklab_to_rgb(lab, 1.0), vec3<f32>(0.0), vec3<f32>(1.0));
+}
+
 @compute @workgroup_size(8, 8)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let dims = textureDimensions(input_tex);
@@ -498,5 +552,10 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         }
     }
 
-    textureStore(output_tex, coords, vec4<f32>(clamp(color, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0));
+    color = clamp(color, vec3<f32>(0.0), vec3<f32>(1.0));
+    // 5. Brightness and Selective Color, on the clipped result as the CPU print_stages sees it.
+    if (params.adjust.x > 0.5 || params.adjust.y != 1.0) {
+        color = apply_adjust(color);
+    }
+    textureStore(output_tex, coords, vec4<f32>(color, 1.0));
 }

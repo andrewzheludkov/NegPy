@@ -127,6 +127,8 @@ class AppState:
     # Color page region (0 Global, 1 Shadows, 2 Highlights): scopes the WB
     # picker so a pick writes the selected region's CMY fields.
     wb_pick_region: int = 0
+    # The White Balance card's Gray picker started the pick: it writes the global CMY fields.
+    wb_pick_global: bool = False
     uploaded_files: List[Dict[str, Any]] = field(default_factory=list)
     thumbnails: Dict[str, Any] = field(default_factory=dict)  # asset_thumbnail_key -> QIcon/QPixmap
     # Keys whose thumbnail came from a canvas render, so it is correctly inverted. The batch

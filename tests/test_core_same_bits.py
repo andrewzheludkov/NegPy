@@ -100,6 +100,14 @@ _CASES = {
     "skin_chroma_rein": lambda: negpy_core.skin_chroma_rein(_LAB, np.float32(0.6)),
     "matmul_3x3": lambda: negpy_core.matmul_3x3(_IMG3, _M),
     "saturation": lambda: negpy_core.saturation(_IMG3, np.float32(1.6), np.float32(0.8), *WORKING_LAB),
+    "adjust": lambda: negpy_core.adjust(
+        _IMG3,
+        (0.5, -0.3, 0.0, 1.0, -1.0, 0.2, 0.0, 0.7),
+        (-0.4, 0.6, -1.0, 0.0, 0.3, 1.0, -0.2, 0.0),
+        (0.3, 0.0, -0.5, 0.8, 0.0, -0.2, 0.4, -1.0),
+        True,
+        0.65,
+    ),
     "print_curve": lambda: apply_characteristic_curve(
         _IMG3 * 0.8 - 0.1, (0.45, 2.1), (0.5, 2.0), (0.55, 1.9), toe=0.3, shoulder=0.2, midtone_gamma=0.2, shadow_density=-0.1, bpc=True
     ),
@@ -212,6 +220,7 @@ _HASHES = {
     "skin_chroma_rein": "6def89b9f456f16abf406c351745bbb791f15bc69e5b03f2e478ed7391839b01",
     "matmul_3x3": "d80c524d23c1bc6b7d9592b638a5fb84d4b51691efac9b71b40fbf529e67c019",
     "saturation": "300727a8b542117598f44a4b6e3c770e637128a48fe5e90d75e750cc80a2b49b",
+    "adjust": "feec862be6f7646463b4911fe4cea0df890a969a2c2ff06a3f1cfdb68e05fbbe",
     "print_curve": "c06516de4316987b8cb37dcf977915373302d36b0bd6c1018e3e4bfba0929b09",
     "chemical_toning": "7ddd3949c04bd5af38177bfcd6576888092bf73ad173206c34b153d6cce5d648",
     "sensor_log_unmix": "f7eb8efe1bbcfe884fd2e849e99d0546fac2f4829d3fb558d54a0128e681e53b",

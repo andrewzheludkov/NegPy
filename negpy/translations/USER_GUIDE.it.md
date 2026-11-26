@@ -363,6 +363,34 @@ Disegna una forma, poi rendi solo quell'area più chiara (schermatura) o più sc
 
 ## 6. Scheda Aspetto
 
+<!-- panel:basic src:fb6ef55f -->
+### 5.5 Esposizione di base: come in un editor di foto
+
+La prima scheda della sezione. Imposta la luminosità della stampa con i nomi usati dagli editor di foto. Ogni cursore parte da 0 %, e di più è più chiaro.
+
+*   **Esposizione**: rende tutta l'immagine più chiara o più scura. Muove **Densità di stampa**.
+*   **Alte luci**: rende più chiare o più scure solo le parti luminose. Muove **Densità alte luci**.
+*   **Ombre**: rende più chiare o più scure solo le parti scure. Muove **Densità ombre**.
+*   **Luminosità**: rende i toni medi più chiari o più scuri. Il nero e il bianco restano dove sono.
+
+<!-- panel:wb src:ae919032 -->
+### 5.6 Sezione Bilanciamento del bianco
+
+Corregge il colore di tutta l'immagine, come in un editor di foto. La scheda muove il **Ciano**, il **Magenta** e il **Giallo** globali della **Filtratura**, così le due schede concordano sempre.
+
+*   **Grigio**: fai clic sul contagocce, poi su qualcosa nell'immagine che dovrebbe essere grigio. NegPy corregge il colore per renderlo grigio.
+*   **Temperatura**: rende l'immagine più fredda (più blu) o più calda (più gialla).
+*   **Tonalità**: rende l'immagine più verde o più magenta.
+
+<!-- panel:selective src:84e27afc -->
+### 6.0 Colore selettivo
+
+Cambia una gamma di colori dell'immagine e lascia invariati gli altri colori e i grigi. I campioni scelgono la gamma: rosso, arancione, giallo, verde, ciano, blu, porpora o magenta. Il pulsante di accensione nell'intestazione spegne tutte le gamme e ne mantiene i valori.
+
+*   **Tinta**: sposta il colore verso i colori vicini, per esempio il rosso verso l'arancione.
+*   **Saturazione**: rende il colore più forte o più debole. -100 % lo rende grigio.
+*   **Luminanza**: rende il colore più chiaro o più scuro.
+
 <!-- panel:lab src:e8e4a89c -->
 ### 6.1 Lab: colore e dettaglio
 

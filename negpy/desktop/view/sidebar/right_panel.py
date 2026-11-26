@@ -71,6 +71,7 @@ _TAB_ICONS = {
     "scan": "mdi6.scanner",
     "geometry": "mdi6.crop",
     "tone": "mdi6.brightness-6",
+    "wb": "mdi6.white-balance-sunny",
     "color": "mdi6.palette-outline",
     "finish": "mdi6.auto-fix",
     "favourites": "mdi6.star-outline",

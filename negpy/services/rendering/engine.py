@@ -43,6 +43,7 @@ from negpy.features.altprocess.models import AltProcess
 from negpy.features.process.models import FADE_RENDER_FIELDS, ProcessMode
 from negpy.features.lab.logic import apply_clahe
 from negpy.features.lab.processor import PhotoLabProcessor
+from negpy.features.adjust.processor import AdjustProcessor
 from negpy.features.finish.processor import FinishProcessor, rebate_tone
 from negpy.kernel.system.config import APP_CONFIG, render_scale_factor
 from negpy.services.view.coordinate_mapping import CoordinateMapping
@@ -74,8 +75,9 @@ def exposure_processor(settings: WorkspaceConfig, white_space: str = "") -> Any:
 
 
 def print_stages(settings: WorkspaceConfig, img: ImageBuffer, context: PipelineContext) -> ImageBuffer:
-    """Alternative process, then toning, on the linear print. Each processor gates itself on
+    """Brightness and Selective Color, then the alternative process and toning, on the linear print. Each processor gates itself on
     the film mode."""
+    img = AdjustProcessor(settings.adjust).process(img, context)
     paper = effective_paper_profile(settings.exposure.paper_profile, settings.process.process_mode)
     img = LithProcessor(settings.altproc, paper).process(img, context)
     img = CyanotypeProcessor(settings.altproc).process(img, context)

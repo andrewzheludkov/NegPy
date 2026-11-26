@@ -187,6 +187,34 @@ Tegn en form, og gjør så bare det området lysere (skygging) eller mørkere (e
 
 **Kopieringsnotater** (`Shift+N`) markerer maskene på bildet med numre og verdier, slik notatene til en kopist gjør.
 
+<!-- panel:basic src:fb6ef55f -->
+### 5.5 Grunneksponering: som i et bilderedigeringsprogram
+
+Det første kortet i fanen. Det setter lysstyrken på kopien med navnene som bilderedigeringsprogrammer bruker. Hver glidebryter starter på 0 %, og mer er lysere.
+
+*   **Eksponering**: gjør hele bildet lysere eller mørkere. Den flytter **Kopitetthet**.
+*   **Høylys**: gjør bare de lyse delene lysere eller mørkere. Den flytter **Høylystetthet**.
+*   **Skygger**: gjør bare de mørke delene lysere eller mørkere. Den flytter **Skyggetetthet**.
+*   **Lysstyrke**: gjør mellomtonene lysere eller mørkere. Svart og hvitt blir der de er.
+
+<!-- panel:wb src:ae919032 -->
+### 5.6 Fanen Hvitbalanse
+
+Korrigerer fargen i hele bildet, som i et bilderedigeringsprogram. Kortet flytter den globale **Cyan**, **Magenta** og **Gul** i **Filtrering**, så de to kortene alltid stemmer overens.
+
+*   **Grå**: klikk på pipetten, så på noe i bildet som skal være grått. NegPy korrigerer fargen slik at det blir grått.
+*   **Temperatur**: gjør bildet kaldere (mer blått) eller varmere (mer gult).
+*   **Fargestikk**: gjør bildet mer grønt eller mer magenta.
+
+<!-- panel:selective src:84e27afc -->
+### 6.0 Selektiv farge
+
+Endrer ett fargeområde i bildet og lar de andre fargene og de grå tonene være. Fargeprøvene velger området: rød, oransje, gul, grønn, cyan, blå, lilla eller magenta. Av/på-knappen i overskriften slår av alle områdene og beholder verdiene.
+
+*   **Fargetone**: dreier fargen mot nabofargene, for eksempel rødt mot oransje.
+*   **Metning**: gjør fargen sterkere eller svakere. -100 % gjør den grå.
+*   **Luminans**: gjør fargen lysere eller mørkere.
+
 <!-- panel:lab src:e8e4a89c -->
 ### 6.1 Lab: farge og detaljer
 

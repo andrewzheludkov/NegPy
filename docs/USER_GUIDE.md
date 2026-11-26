@@ -291,7 +291,7 @@ Crop before a large Tilt or Swing, or the film border can come into view and dar
 
 ## 5. Exposure tab
 
-These four cards set the brightness, contrast and color of the print.
+These five cards set the brightness, contrast and color of the print.
 
 <!-- panel:color -->
 ### 5.1 Filtration: color balance
@@ -360,9 +360,37 @@ Draw a shape, then make only that area lighter (dodge) or darker (burn). A slide
 
 **Printing Notes** (`Shift+N`) marks the masks on the picture with their numbers and values, as a printer's notes do.
 
+<!-- panel:basic -->
+### 5.5 Basic Exposure: as in a photo editor
+
+The first card of the tab. It sets the brightness of the print with the names that photo editors use. Each slider starts at 0 %, and more is lighter.
+
+*   **Exposure**: makes the whole picture lighter or darker. It moves **Print Density**.
+*   **Highlights**: makes only the bright parts lighter or darker. It moves **Highlights Density**.
+*   **Shadows**: makes only the dark parts lighter or darker. It moves **Shadows Density**.
+*   **Brightness**: makes the middle tones lighter or darker. Black and white stay where they are.
+
+<!-- panel:wb -->
+### 5.6 White Balance tab
+
+Corrects the color of the whole picture, as in a photo editor. The card moves the Global **Cyan**, **Magenta** and **Yellow** of **Filtration**, so the two cards always agree.
+
+*   **Gray**: click the eyedropper, then something in the picture that should be gray. NegPy corrects the color to make it gray.
+*   **Temperature**: makes the picture cooler (more blue) or warmer (more yellow).
+*   **Tint**: makes the picture more green or more magenta.
+
 ---
 
 ## 6. Look tab
+
+<!-- panel:selective -->
+### 6.0 Selective Color
+
+Changes one color range of the picture, and leaves the other colors and the grays alone. The swatches pick the range: red, orange, yellow, green, cyan, blue, purple or magenta. The power button on the header turns all ranges off and keeps their values.
+
+*   **Hue**: turns the color toward its neighbor colors, for example red toward orange.
+*   **Saturation**: makes the color stronger or weaker. -100 % makes it gray.
+*   **Luminance**: makes the color lighter or darker.
 
 <!-- panel:lab -->
 ### 6.1 Lab: color and detail

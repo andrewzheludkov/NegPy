@@ -111,6 +111,19 @@ class ThemeConfig:
     filter_cyan: str = "#00B1B1"
     filter_magenta: str = "#B100B1"
     filter_yellow: str = "#B1B100"
+    # White Balance tracks: cool to warm, green to magenta.
+    wb_cool: str = "#4A8FE8"
+    wb_warm: str = "#E8C84A"
+    wb_green: str = "#5ADC78"
+    wb_magenta: str = "#E070D8"
+    # Selective Color swatches, in band order.
+    band_orange: str = "#F0A050"
+    band_yellow: str = "#F0E060"
+    band_green: str = "#70D860"
+    band_cyan: str = "#70E8E8"
+    band_blue: str = "#4070E8"
+    band_purple: str = "#9070F0"
+    band_magenta: str = "#E070E8"
     # Dodge & Burn: the same amber and blue on the overlay, the mask list and the printing notes.
     dodge: str = "#E8C84A"
     burn: str = "#4A8FE8"
@@ -136,6 +149,8 @@ class ThemeConfig:
             "analysis": True,
             "baseline": True,
             "process": False,
+            "basic": True,
+            "selective": True,
             "color": True,
             "tone": True,
             "paper": True,

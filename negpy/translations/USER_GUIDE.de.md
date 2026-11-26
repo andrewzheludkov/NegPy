@@ -187,6 +187,34 @@ Zeichne eine Form. Nur dieser Bereich wird dann heller (Abwedeln) oder dunkler (
 
 **Abzugsnotizen** (`Shift+N`) markieren die Masken mit ihren Nummern und Werten im Bild, wie Notizen eines Druckers im Labor.
 
+<!-- panel:basic src:fb6ef55f -->
+### 5.5 Grundbelichtung: wie in einer Bildbearbeitung
+
+Die erste Karte des Reiters. Sie stellt die Helligkeit des Abzugs mit den Namen ein, die Bildbearbeitungen verwenden. Jeder Regler beginnt bei 0 %, und mehr ist heller.
+
+*   **Belichtung**: macht das ganze Bild heller oder dunkler. Sie bewegt **Abzugsdichte**.
+*   **Lichter**: macht nur die hellen Teile heller oder dunkler. Sie bewegt **Lichterdichte**.
+*   **Schatten**: macht nur die dunklen Teile heller oder dunkler. Sie bewegt **Schattendichte**.
+*   **Helligkeit**: macht die Mitteltöne heller oder dunkler. Schwarz und Weiß bleiben, wo sie sind.
+
+<!-- panel:wb src:ae919032 -->
+### 5.6 Reiter Weißabgleich
+
+Korrigiert die Farbe des ganzen Bildes wie in einer Bildbearbeitung. Die Karte bewegt das globale **Cyan**, **Magenta** und **Gelb** der **Filterung**, so stimmen beide Karten immer überein.
+
+*   **Grau**: Klicken Sie auf die Pipette, dann auf etwas im Bild, das grau sein soll. NegPy korrigiert die Farbe, damit es grau wird.
+*   **Temperatur**: macht das Bild kühler (blauer) oder wärmer (gelber).
+*   **Tönung**: macht das Bild grüner oder magentafarbener.
+
+<!-- panel:selective src:84e27afc -->
+### 6.0 Selektive Farbe
+
+Ändert einen Farbbereich des Bildes und lässt die anderen Farben und die Grautöne unverändert. Die Farbfelder wählen den Bereich: Rot, Orange, Gelb, Grün, Cyan, Blau, Lila oder Magenta. Der Ein-Aus-Knopf in der Kopfzeile schaltet alle Bereiche aus und behält ihre Werte.
+
+*   **Farbton**: dreht die Farbe zu ihren Nachbarfarben, zum Beispiel Rot zu Orange.
+*   **Sättigung**: macht die Farbe kräftiger oder schwächer. -100 % macht sie grau.
+*   **Luminanz**: macht die Farbe heller oder dunkler.
+
 <!-- panel:lab src:e8e4a89c -->
 ### 6.1 Lab: Farbe und Detail
 

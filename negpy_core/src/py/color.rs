@@ -217,8 +217,35 @@ fn flat_curve<'py>(
     })
 }
 
+/// `apply_adjust(img, hue, sat, lum, hsl, gamma)` of an (..., 3) float32 linear RGB array:
+/// eight bands each of Hue, Saturation and Luminance, then the Brightness power on Oklab L.
+#[pyfunction]
+fn adjust<'py>(
+    py: Python<'py>,
+    img: PyReadonlyArrayDyn<'py, f32>,
+    hue: [f64; 8],
+    sat: [f64; 8],
+    lum: [f64; 8],
+    hsl: bool,
+    gamma: f64,
+) -> PyResult<Bound<'py, PyArrayDyn<f32>>> {
+    triplets(&img)?;
+    if !(gamma > 0.0 && gamma.is_finite()) {
+        return Err(PyValueError::new_err("gamma must be positive"));
+    }
+    let p = color::Adjust {
+        hue,
+        sat,
+        lum,
+        hsl,
+        gamma,
+    };
+    filled(py, &img, |src, d| color::adjust(src, d, p))
+}
+
 pub fn register(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(flat_curve, m)?)?;
+    m.add_function(wrap_pyfunction!(adjust, m)?)?;
     m.add_function(wrap_pyfunction!(oetf_encode, m)?)?;
     m.add_function(wrap_pyfunction!(oetf_decode, m)?)?;
     m.add_function(wrap_pyfunction!(rgb_to_lab, m)?)?;

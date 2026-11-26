@@ -545,3 +545,172 @@ fn flat_curve_block(
         *d = v.map(|x| (lift + gain * (1.0 - x)).clamp(0.0, 1.0));
     }
 }
+
+/// Oklab hue in degrees of each Selective Color band: red, orange, yellow, green, cyan, blue,
+/// purple, magenta. Mirrored in lab.wgsl and `features/adjust/logic.py`.
+pub const BAND_HUES: [f64; 8] = [29.0, 60.0, 110.0, 150.0, 194.0, 264.0, 305.0, 335.0];
+/// Band Hue at 1.0 turns the band this many degrees toward the next band.
+pub const HUE_SHIFT_DEG: f64 = 30.0;
+/// Band Luminance at 1.0 scales Oklab L by 1 plus this.
+pub const LUM_GAIN: f64 = 0.4;
+/// Oklab chroma under which a pixel counts as gray: Hue and Luminance fade in up to it.
+pub const GRAY_CHROMA: f64 = 0.04;
+/// Brightness at 1.0 raises Oklab L to the power 2^-BRIGHTNESS_STOPS.
+pub const BRIGHTNESS_STOPS: f64 = 0.7;
+
+/// Selective Color and Brightness, per band as fractions of full travel (-1..1).
+#[derive(Clone, Copy)]
+pub struct Adjust {
+    pub hue: [f64; 8],
+    pub sat: [f64; 8],
+    pub lum: [f64; 8],
+    pub hsl: bool,
+    /// The power on Oklab L; 1 is off.
+    pub gamma: f64,
+}
+
+/// The two bands around `deg` (0..360) and the smoothstep weight of the upper one.
+#[inline(always)]
+fn band_pair(deg: f64) -> (usize, usize, f64) {
+    let mut lo = 7;
+    for (i, &c) in BAND_HUES.iter().enumerate() {
+        if deg >= c {
+            lo = i;
+        }
+    }
+    let hi = (lo + 1) % 8;
+    let start = BAND_HUES[lo];
+    let mut span = BAND_HUES[hi] - start;
+    let mut d = deg - start;
+    if span <= 0.0 {
+        span += 360.0;
+    }
+    if d < 0.0 {
+        d += 360.0;
+    }
+    let t = (d / span).clamp(0.0, 1.0);
+    (lo, hi, t * t * (3.0 - 2.0 * t))
+}
+
+/// sin and cos of |x| <= pi/4 by their Taylor series to x^9, branch-free.
+#[inline(always)]
+fn sin_cos_small(x: f64) -> (f64, f64) {
+    let x2 = x * x;
+    let s = x * (1.0 - x2 / 6.0 * (1.0 - x2 / 20.0 * (1.0 - x2 / 42.0 * (1.0 - x2 / 72.0))));
+    let c = 1.0 - x2 / 2.0 * (1.0 - x2 / 12.0 * (1.0 - x2 / 30.0 * (1.0 - x2 / 56.0)));
+    (s, c)
+}
+
+#[multiversion(targets(
+    "x86_64+avx512f+avx512bw+avx512vl+avx512dq",
+    "x86_64+avx2+fma",
+    "aarch64+neon"
+))]
+fn adjust_block(src: &[f32], dst: &mut [f32], p: Adjust) {
+    for (d, s) in dst
+        .as_chunks_mut::<3>()
+        .0
+        .iter_mut()
+        .zip(src.as_chunks::<3>().0)
+    {
+        let [r, g, b] = s.map(|v| (v as f64).max(0.0));
+        let lms = OK_LMS.map(|m| pow_f64(row(m, r, g, b), 1.0 / 3.0));
+        let [mut l, mut a, mut bb] = OK_LAB.map(|m| row(m, lms[0], lms[1], lms[2]));
+        if p.hsl {
+            let chroma = a.mul_add(a, bb * bb).sqrt();
+            let deg = crate::mathf::atan2_f64(bb, a).to_degrees();
+            let deg = if deg < 0.0 { deg + 360.0 } else { deg };
+            let (lo, hi, w) = band_pair(deg);
+            let mix = |v: &[f64; 8]| (v[hi] - v[lo]).mul_add(w, v[lo]);
+            let t = (chroma / GRAY_CHROMA).clamp(0.0, 1.0);
+            let gate = t * t * (3.0 - 2.0 * t);
+            let (sn, cs) = sin_cos_small((mix(&p.hue) * HUE_SHIFT_DEG * gate).to_radians());
+            let k = (1.0 + mix(&p.sat)).max(0.0);
+            (a, bb) = ((a * cs - bb * sn) * k, (a * sn + bb * cs) * k);
+            l *= (mix(&p.lum) * LUM_GAIN * gate + 1.0).max(0.0);
+        }
+        if p.gamma != 1.0 {
+            l = pow_f64(l.clamp(0.0, 1.0), p.gamma);
+        }
+        let rgb = oklab_rgb([l, a, bb], 1.0);
+        *d = rgb.map(|v| v.clamp(0.0, 1.0) as f32);
+    }
+}
+
+/// `apply_adjust` over N x 3 linear RGB: the Selective Color bands, then Brightness, both on
+/// Oklab, clipped to 0..1.
+pub fn adjust(src: &[f32], dst: &mut [f32], p: Adjust) {
+    dst.par_chunks_mut(BLOCK * 3)
+        .zip(src.par_chunks(BLOCK * 3))
+        .for_each(move |(d, s)| adjust_block(s, d, p));
+}
+
+#[cfg(test)]
+mod adjust_tests {
+    use super::*;
+
+    fn off() -> Adjust {
+        Adjust {
+            hue: [0.0; 8],
+            sat: [0.0; 8],
+            lum: [0.0; 8],
+            hsl: true,
+            gamma: 1.0,
+        }
+    }
+
+    fn run(px: [f32; 3], p: Adjust) -> [f32; 3] {
+        let mut out = [0f32; 3];
+        adjust(&px, &mut out, p);
+        out
+    }
+
+    #[test]
+    fn neutral_settings_keep_the_pixel() {
+        for px in [[0.2f32, 0.5, 0.7], [0.9, 0.1, 0.05], [0.4, 0.4, 0.4]] {
+            let out = run(px, off());
+            for c in 0..3 {
+                assert!((out[c] - px[c]).abs() < 1e-5, "{px:?} -> {out:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_band_leaves_gray_alone() {
+        let mut p = off();
+        p.hue = [1.0; 8];
+        p.lum = [1.0; 8];
+        let out = run([0.3, 0.3, 0.3], p);
+        for v in out {
+            assert!((v - 0.3).abs() < 1e-5);
+        }
+    }
+
+    #[test]
+    fn red_saturation_minus_one_makes_red_gray() {
+        let mut p = off();
+        p.sat[0] = -1.0;
+        let out = run([0.6, 0.0, 0.0], p);
+        assert!(
+            (out[0] - out[1]).abs() < 2e-3 && (out[1] - out[2]).abs() < 2e-3,
+            "{out:?}"
+        );
+    }
+
+    #[test]
+    fn brightness_lifts_midtones_and_keeps_white_and_black() {
+        let mut p = off();
+        p.gamma = 0.6;
+        let mid = run([0.2, 0.2, 0.2], p);
+        assert!(mid[0] > 0.25);
+        assert!(run([1.0, 1.0, 1.0], p)[0] > 0.999);
+        assert!(run([0.0, 0.0, 0.0], p)[0] < 1e-6);
+    }
+
+    #[test]
+    fn band_pair_wraps_past_magenta() {
+        let (lo, hi, w) = band_pair(10.0);
+        assert_eq!((lo, hi), (7, 0));
+        assert!(w > 0.0 && w < 1.0);
+    }
+}

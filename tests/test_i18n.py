@@ -386,7 +386,7 @@ from negpy.desktop.view.sidebar.controls_panel import ControlsPanel
 controller = FakeController(FakeRepo())
 panel = ControlsPanel(controller)
 assert {page['key']: page['label'] for page in panel.pages} == {
-    'geometry': '几何', 'tone': '曝光', 'color': '风格', 'finish': '修饰',
+    'geometry': '几何', 'tone': '曝光', 'wb': '白平衡', 'color': '风格', 'finish': '修饰',
 }
 assert panel.pages[0]['tooltip'] == '几何'
 controller.state.config = replace(controller.state.config, geometry=replace(controller.state.config.geometry, autocrop_ratio='6:7'))
@@ -408,7 +408,7 @@ assert 'Cancel' not in buttons.button(QDialogButtonBox.StandardButton.Cancel).te
                 "other": "その他",
                 "original": "オリジナル",
                 "cancel": "キャンセル",
-                "tabs": ["ジオメトリ", "露光", "ルック", "仕上げ"],
+                "tabs": ["ジオメトリ", "露光", "ホワイトバランス", "ルック", "仕上げ"],
             },
         ),
         (
@@ -419,7 +419,7 @@ assert 'Cancel' not in buttons.button(QDialogButtonBox.StandardButton.Cancel).te
                 "other": "기타",
                 "original": "원본",
                 "cancel": "취소",
-                "tabs": ["기하", "노출", "룩", "마무리"],
+                "tabs": ["기하", "노출", "화이트 밸런스", "룩", "마무리"],
             },
         ),
     ],

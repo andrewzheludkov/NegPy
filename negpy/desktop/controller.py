@@ -3702,6 +3702,8 @@ class AppController(QObject):
         leaving_zone_place = self.state.active_tool == ToolMode.ZONE_PLACE and mode != ToolMode.ZONE_PLACE
         if mode != ToolMode.KEYSTONE_LINES:
             self._keystone_lines = {}
+        if mode != ToolMode.WB_PICK:
+            self.state.wb_pick_global = False
         if mode != self.state.active_tool:
             self._tool_entry = (mode, self.state.current_file_hash, self.state.config) if mode in REVERTIBLE_TOOLS else None
         self.state.active_tool = mode
@@ -5840,7 +5842,7 @@ class AppController(QObject):
             new_m = exp.wb_magenta + delta_m * damping
             new_y = exp.wb_yellow + delta_y * damping
 
-        region = self.state.wb_pick_region
+        region = 0 if self.state.wb_pick_global else self.state.wb_pick_region
         if region == 0:
             new_exp = replace(
                 exp,

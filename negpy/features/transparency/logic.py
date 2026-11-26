@@ -725,3 +725,11 @@ def slide_pick_wb(sampled_norm_rgb: Any, channel_ranges: Tuple[float, float, flo
     a = (o[2] - o[0]) / (kc + ky)
     tint = o[1] - o[0] - kc * a
     return -kc * a, tint, ky * a
+
+
+def slide_temp_to_wb(temperature: float, cyan: float, yellow: float) -> Tuple[float, float]:
+    """(cyan, yellow) for a slide's Temperature, which is Yellow: Cyan moves against it by the
+    Planckian ratio, so any Cyan set by hand stays as an offset."""
+    y = min(max(temperature, -1.0), 1.0)
+    c = cyan - _SLIDE_K_CYAN / _SLIDE_K_YELLOW * (y - yellow)
+    return float(min(max(c, -1.0), 1.0)), float(y)

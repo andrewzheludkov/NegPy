@@ -1441,3 +1441,15 @@ def calculate_wb_shifts_from_log(sampled_log_rgb: np.ndarray, bounds: Any = None
     shift_y = density_to_cmy(d_y, rng(2))
 
     return float(shift_m), float(shift_y)
+
+
+def temp_tint_of(magenta: float, yellow: float) -> Tuple[float, float]:
+    """(Temperature, Tint) of a print's (M, Y) pair, each -1..1. Temperature is Yellow; Tint is
+    the Magenta left over after the Planckian share of that Yellow."""
+    return float(yellow), float(magenta - _TEMP_K_MAGENTA / _TEMP_K_YELLOW * yellow)
+
+
+def temp_tint_to_wb(temperature: float, tint: float) -> Tuple[float, float]:
+    """(M, Y) for a print's Temperature and Tint, clipped to the slider range."""
+    m = tint + _TEMP_K_MAGENTA / _TEMP_K_YELLOW * temperature
+    return float(min(max(m, -1.0), 1.0)), float(min(max(temperature, -1.0), 1.0))

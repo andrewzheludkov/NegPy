@@ -65,6 +65,10 @@ from negpy.desktop.view.sidebar.toning import ToningSidebar
 from negpy.desktop.view.sidebar.retouch import RetouchSidebar
 from negpy.desktop.view.sidebar.local import LocalSidebar
 from negpy.desktop.view.sidebar.finish import FinishSidebar
+from negpy.desktop.view.sidebar.white_balance import WB_FIELDS, WhiteBalanceSidebar
+from negpy.desktop.view.sidebar.basic_exposure import BASIC_EXPOSURE_FIELDS, BasicExposureSidebar
+from negpy.desktop.view.sidebar.selective_color import SelectiveColorSidebar
+from negpy.features.adjust.models import SELECTIVE_FIELDS
 
 _DEMOSAIC_FIELDS = ("highlight_reconstruction",)
 # GeometryConfig is split across three cards: Crop and Geometry are this frame's own,
@@ -333,6 +337,18 @@ class ControlsPanel(QWidget):
             background_widget=self.color_histogram,
         )
 
+        self.basic_sidebar = BasicExposureSidebar(self.controller)
+        self.basic_section = self._make_section(tr("Basic Exposure"), "basic", self.basic_sidebar, icon_name="fa5s.sliders-h")
+
+        self.wb_sidebar = WhiteBalanceSidebar(self.controller)
+        self.wb_section = self._make_section(tr("White Balance"), "wb", self.wb_sidebar, icon_name="fa5s.eye-dropper", collapsible=False)
+
+        self.selective_sidebar = SelectiveColorSidebar(self.controller)
+        self.selective_section = self._make_section(tr("Selective Color"), "selective", self.selective_sidebar, icon_name="fa5s.swatchbook")
+        self.selective_toggle = self.selective_section.add_header_toggle(
+            "fa5s.power-off", tr("Selective Color on or off: off keeps the settings but does not apply them.")
+        )
+
         self.tone_sidebar = ToneSidebar(self.controller)
         self.tone_histogram = MiniHistogramWidget()
         self.tone_section = self._make_section(
@@ -415,17 +431,24 @@ class ControlsPanel(QWidget):
             ),
             (
                 "tone",
-                tr("Exposure: Filtration, Tone, Paper Response, Dodge & Burn"),
+                tr("Exposure: Basic Exposure, Filtration, Tone, Paper Response, Dodge & Burn"),
                 tr("Exposure"),
-                [self.color_section, self.tone_section, self.paper_section, self.local_section],
-                ["color_section", "tone_section", "paper_section", "local_section"],
+                [self.basic_section, self.color_section, self.tone_section, self.paper_section, self.local_section],
+                ["basic_section", "color_section", "tone_section", "paper_section", "local_section"],
+            ),
+            (
+                "wb",
+                tr("White Balance"),
+                tr("White Balance"),
+                [self.wb_section],
+                ["wb_section"],
             ),
             (
                 "color",
-                tr("Look: Lab, Alternative Processes, Toning"),
+                tr("Look: Selective Color, Lab, Alternative Processes, Toning"),
                 tr("Look"),
-                [self.lab_section, self.altproc_section, self.toning_section],
-                ["lab_section", "altproc_section", "toning_section"],
+                [self.selective_section, self.lab_section, self.altproc_section, self.toning_section],
+                ["selective_section", "lab_section", "altproc_section", "toning_section"],
             ),
             (
                 "finish",
@@ -561,6 +584,10 @@ class ControlsPanel(QWidget):
         self.controller.session.color_vision_changed.connect(self._sync_clip_colors)
 
         self.color_section.reset_requested.connect(lambda: self._reset_exposure_fields(COLOR_FIELDS))
+        self.wb_section.reset_requested.connect(lambda: self._reset_exposure_fields(WB_FIELDS))
+        self.basic_section.reset_requested.connect(self._reset_basic_fields)
+        self.selective_section.reset_requested.connect(lambda: self._reset_adjust_fields(SELECTIVE_FIELDS))
+        self.selective_toggle.clicked.connect(self.selective_sidebar.set_enabled)
         self.tone_section.reset_requested.connect(self._reset_tone_fields)
         self.paper_section.reset_requested.connect(lambda: self._reset_exposure_fields(PAPER_FIELDS))
         self.lab_section.reset_requested.connect(lambda: self.controller.session.reset_section("lab"))
@@ -1054,6 +1081,10 @@ class ControlsPanel(QWidget):
         self.process_sidebar.sync_ui()
         self.roll_sidebar.sync_ui()
         self.color_sidebar.sync_ui()
+        self.wb_sidebar.sync_ui()
+        self.basic_sidebar.sync_ui()
+        self.selective_sidebar.sync_ui()
+        self.selective_toggle.setChecked(self.controller.state.config.adjust.selective_enabled)
         self.tone_sidebar.sync_ui()
         self.paper_sidebar.sync_ui()
         self.geometry_sidebar.sync_ui()
@@ -1233,6 +1264,25 @@ class ControlsPanel(QWidget):
             self.controller.set_slide_bw(_DEFAULT_PROCESS.slide_bw)
         if proc.process_mode != _DEFAULT_PROCESS.process_mode:
             self.controller.set_process_mode(_DEFAULT_PROCESS.process_mode)
+
+    def _reset_adjust_fields(self, fields) -> None:
+        from dataclasses import replace
+
+        cfg = self.controller.state.config
+        default = _DEFAULT_CONFIG.adjust
+        self.controller.session.update_config(
+            replace(cfg, adjust=replace(cfg.adjust, **{f: getattr(default, f) for f in fields})), persist=True
+        )
+
+    def _reset_basic_fields(self) -> None:
+        """Basic's Exposure, Highlights and Shadows are Tone fields; Brightness is its own."""
+        from dataclasses import replace
+
+        cfg = self.controller.state.config
+        mode = cfg.process.process_mode
+        exposure = replace(cfg.exposure, **{f: _default_exposure_field(f, mode) for f in BASIC_EXPOSURE_FIELDS})
+        adjust = replace(cfg.adjust, brightness=_DEFAULT_CONFIG.adjust.brightness)
+        self.controller.session.update_config(replace(cfg, exposure=exposure, adjust=adjust), persist=True)
 
     def _reset_tone_fields(self) -> None:
         self._reset_exposure_fields(TONE_FIELDS)
@@ -1430,6 +1480,13 @@ class ControlsPanel(QWidget):
             ]
         )
 
+        adj = cfg.adjust
+        _adj = _DEFAULT_CONFIG.adjust
+        self.wb_section.set_modified(sum(getattr(exp, f) != _default_exposure_field(f, mode) for f in WB_FIELDS))
+        self.basic_section.set_modified(
+            sum(getattr(exp, f) != _default_exposure_field(f, mode) for f in BASIC_EXPOSURE_FIELDS) + (adj.brightness != _adj.brightness)
+        )
+        self.selective_section.set_modified(sum(getattr(adj, f) != getattr(_adj, f) for f in SELECTIVE_FIELDS))
         self.film_section.set_modified(film_count)
         self.color_section.set_modified(color_count)
         self.tone_section.set_modified(tone_count)
@@ -1464,3 +1521,4 @@ class ControlsPanel(QWidget):
         # Retouch's heal and scratch toggles and the color sidebar's WB picker follow active_tool too.
         self.retouch_sidebar.sync_ui()
         self.color_sidebar.sync_ui()
+        self.wb_sidebar.sync_ui()

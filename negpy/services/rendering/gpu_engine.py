@@ -69,6 +69,8 @@ from negpy.features.lab.logic import (
     rl_iterations,
 )
 from negpy.features.lab.models import SharpenMethod
+from negpy.features.adjust.logic import brightness_gamma, hsl_active
+from negpy.features.adjust.models import band_values
 from negpy.features.altprocess.models import AltProcess
 from negpy.features.cyanotype.logic import CYANOTYPE_CONSTANTS, sensitizer_constants
 from negpy.features.lith.logic import LITH_CONSTANTS
@@ -406,7 +408,7 @@ class GPUEngine:
             "exposure": 480,
             "transfer": 208,
             "clahe_u": 32,
-            "lab": 96,
+            "lab": 176,
             "lith": 64,
             "cyanotype": 64,
             "sabattier": 32,
@@ -479,7 +481,7 @@ class GPUEngine:
         1: Exposure (Normalization/Grading/Dodge & Burn)
         2: CLAHE (Adaptive Hist)
         3: Retouch (Healing)
-        4: Lab (Color/Sharpen)
+        4: Lab (Color/Sharpen, Brightness, Selective Color)
         6: Toning (Paper/Split)
         7: Finish (Vignette)
         8: Layout (Final compositing)
@@ -509,7 +511,7 @@ class GPUEngine:
             return 1
         if last.lab.clahe_strength != settings.lab.clahe_strength:
             return 2
-        if last.lab != settings.lab:
+        if last.lab != settings.lab or last.adjust != settings.adjust:
             return 4
         if last.altproc != settings.altproc:
             return 5
@@ -2409,6 +2411,15 @@ class GPUEngine:
             1.0 if lab.sharpen_auto_masking else 0.0,
             *hal_amounts,
             float(min(h_rot, w_rot)),
+        ) + struct.pack(
+            "28f",
+            *band_values(settings.adjust, "hue"),
+            *band_values(settings.adjust, "sat"),
+            *band_values(settings.adjust, "lum"),
+            1.0 if hsl_active(settings.adjust) else 0.0,
+            brightness_gamma(settings.adjust.brightness),
+            0.0,
+            0.0,
         )
 
         is_bw = 1 if is_mono(settings.process) else 0

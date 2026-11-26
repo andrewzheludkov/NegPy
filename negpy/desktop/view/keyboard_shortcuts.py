@@ -608,6 +608,7 @@ class ShortcutManager:
             "mode_bw_negative": lambda: controls.process_sidebar.mode_btn.setCurrentIndex(1),
             "mode_transparency": lambda: controls.process_sidebar.mode_btn.setCurrentIndex(2),
             "pick_wb": lambda: controls.color_sidebar.pick_wb_btn.toggle(),
+            "toggle_selective_color": lambda: controls.selective_toggle.click(),
             "manual_crop": lambda: controls.autocrop_sidebar.manual_crop_btn.toggle(),
             "auto_skew": lambda: controls.geometry_sidebar.auto_skew_btn.click(),
             "straighten": lambda: controls.geometry_sidebar.straighten_btn.toggle(),
